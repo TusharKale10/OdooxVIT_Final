@@ -2,18 +2,32 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Compass, User, Briefcase, Shield,
-  Bell, LogOut, Menu, X, Sparkles, Coins, Bookmark,
+  Bell, LogOut, Menu, X, Sparkles, Coins, Bookmark, Video,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client';
 import ChatbotWidget from './ChatbotWidget.jsx';
 import SearchAutocomplete from './SearchAutocomplete.jsx';
+import MobileBottomNav from './MobileBottomNav.jsx';
+import UpcomingMeetingBanner from './UpcomingMeetingBanner.jsx';
 
 function NavItem({ to, icon: Icon, label, end }) {
+  // Icon stays centered when the rail is collapsed; label expands on group hover.
   return (
-    <NavLink to={to} end={end} className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-      <Icon size={18} />
-      <span>{label}</span>
+    <NavLink
+      to={to}
+      end={end}
+      title={label}
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-2.5 px-3 rounded-xl text-sm font-medium transition
+         justify-center group-hover/rail:justify-start
+         ${isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900'}`
+      }
+    >
+      <Icon size={20} className="flex-shrink-0" />
+      <span className="whitespace-nowrap overflow-hidden max-w-0 opacity-0 group-hover/rail:max-w-[180px] group-hover/rail:opacity-100 transition-[max-width,opacity] duration-200">
+        {label}
+      </span>
     </NavLink>
   );
 }
@@ -91,7 +105,7 @@ function NotificationsBell() {
         <>
           <div className="fixed inset-0" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-2 w-[min(360px,calc(100vw-1rem))] max-h-[480px] overflow-auto card z-50 animate-fade-in">
-            <div className="sticky top-0 bg-white/95 backdrop-blur flex items-center justify-between px-4 py-3 border-b border-ink-100 z-10">
+            <div className="sticky top-0 bg-white/95 backdrop-blur flex items-center justify-between px-4 py-3 border-b border-ink-200 z-10">
               <span className="font-semibold">Notifications</span>
               <div className="flex gap-3">
                 <button className="text-xs text-brand-600 hover:underline" onClick={markAll}>Mark all read</button>
@@ -102,7 +116,7 @@ function NotificationsBell() {
             <ul>
               {items.map((n) => (
                 <li key={n.id}
-                    className={`group relative px-4 py-3 border-b border-ink-100 last:border-0 transition-colors ${n.is_read ? '' : 'bg-brand-50/40'}`}>
+                    className={`group relative px-4 py-3 border-b border-ink-200 last:border-0 transition-colors ${n.is_read ? '' : 'bg-brand-50/40'}`}>
                   <button
                     onClick={() => dismiss(n.id)}
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-ink-100 text-ink-400 hover:text-rose-600"
@@ -150,36 +164,53 @@ export default function Layout({ children }) {
     ...(user ? [{ to: '/credits', icon: Coins, label: 'Credits' }] : []),
     ...(user && (user.role === 'organiser' || user.role === 'admin')
       ? [{ to: '/organiser', icon: Briefcase, label: 'Organiser' }] : []),
+    ...(user && (user.role === 'organiser' || user.role === 'admin')
+      ? [{ to: '/organiser/meetings', icon: Video, label: 'Meetings' }] : []),
     ...(user && user.role === 'admin' ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
   return (
-    <div className="min-h-screen flex bg-ink-50">
-      {/* Sidebar (desktop) */}
-      <aside className="hidden lg:flex lg:flex-col w-64 bg-white border-r border-ink-100 px-4 py-5 sticky top-0 h-screen">
-        <Link to="/" className="flex items-center gap-2 px-2 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold shadow-soft">S</div>
-          <div>
-            <div className="font-bold text-ink-900 leading-none">Schedula</div>
-            <div className="text-[11px] text-ink-500">Smart appointment scheduling</div>
+    <div className="min-h-screen bg-ink-50">
+      {/* Desktop sidebar — collapsed rail by default, expands on hover.
+          Fixed-position so expansion does NOT reflow main content. */}
+      <aside
+        className="hidden lg:flex lg:flex-col group/rail
+                   fixed left-0 top-0 h-screen z-40
+                   w-[72px] hover:w-64
+                   bg-white border-r border-ink-200 px-3 py-5
+                   transition-[width,box-shadow] duration-300 ease-out
+                   hover:shadow-2xl hover:shadow-brand-900/10 overflow-hidden"
+      >
+        <Link to="/" className="flex items-center gap-2 mb-8 h-10 px-1 justify-center group-hover/rail:justify-start">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold shadow-soft flex-shrink-0">S</div>
+          <div className="overflow-hidden max-w-0 opacity-0 group-hover/rail:max-w-[180px] group-hover/rail:opacity-100 transition-[max-width,opacity] duration-200">
+            <div className="font-bold text-ink-900 leading-none whitespace-nowrap">Schedula</div>
+            <div className="text-[11px] text-ink-500 whitespace-nowrap">Smart appointment scheduling</div>
           </div>
         </Link>
         <nav className="flex-1 space-y-1">
           {sidebarItems.map((it) => <NavItem key={it.to} {...it} />)}
         </nav>
         {user && (
-          <div className="card p-3 mt-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-semibold flex items-center justify-center">{initials}</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold truncate">{fullName.split(' ')[0]}</div>
-              <div className="text-xs text-ink-500 capitalize">{user.role}</div>
+          <div className="mt-4 rounded-2xl border border-ink-200 bg-white shadow-soft p-2.5 flex items-center gap-3 justify-center group-hover/rail:justify-start">
+            <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-semibold flex items-center justify-center flex-shrink-0">{initials}</div>
+            <div className="overflow-hidden max-w-0 opacity-0 group-hover/rail:max-w-[140px] group-hover/rail:opacity-100 transition-[max-width,opacity] duration-200 flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate whitespace-nowrap">{fullName.split(' ')[0]}</div>
+              <div className="text-xs text-ink-500 capitalize whitespace-nowrap">{user.role}</div>
             </div>
-            <button onClick={() => { logout(); nav('/login'); }} title="Sign out" className="p-1.5 hover:bg-ink-100 rounded-lg text-ink-500">
+            <button
+              onClick={() => { logout(); nav('/login'); }}
+              title="Sign out"
+              className="p-1.5 hover:bg-ink-100 rounded-lg text-ink-500 flex-shrink-0 max-w-0 opacity-0 group-hover/rail:max-w-8 group-hover/rail:opacity-100 transition-[max-width,opacity] duration-200 overflow-hidden"
+            >
               <LogOut size={16} />
             </button>
           </div>
         )}
       </aside>
+
+      {/* Reserved gutter so main content sits to the right of the (collapsed) rail */}
+      <div className="flex lg:pl-[72px]">
 
       {/* Mobile drawer */}
       {open && (
@@ -202,8 +233,8 @@ export default function Layout({ children }) {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 bg-white/85 backdrop-blur border-b border-ink-100">
-          <div className="px-4 sm:px-6 py-3 flex items-center gap-3">
+        <header className="sticky top-0 z-30 bg-white/85 backdrop-blur border-b border-ink-200">
+          <div className="px-4 sm:px-6 py-3 flex items-center gap-6 justify-end">
             <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-2"><Menu size={20} /></button>
             <SearchAutocomplete />
             <PlanCreditsBadge />
@@ -223,12 +254,16 @@ export default function Layout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 py-6">
+        <main className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6">
+          {user && <UpcomingMeetingBanner />}
           {children}
         </main>
       </div>
 
+      </div>{/* end of pl-[72px] gutter wrapper */}
+
       {user && <ChatbotWidget />}
+      <MobileBottomNav />
     </div>
   );
 }

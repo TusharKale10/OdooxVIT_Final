@@ -75,7 +75,7 @@ export default function Reschedule() {
                   <button key={s.start} disabled={!s.available} onClick={() => setPick(s)}
                     className={`px-3 py-2 rounded-xl text-sm font-medium border transition
                       ${pick && pick.start === s.start ? 'bg-brand-600 text-white border-brand-600' :
-                        s.available ? 'bg-white border-ink-200 text-ink-800 hover:border-brand-400' : 'bg-ink-50 border-ink-100 text-ink-300 cursor-not-allowed'}
+                        s.available ? 'bg-white border-ink-200 text-ink-800 hover:border-brand-400' : 'bg-ink-50 border-ink-200 text-ink-300 cursor-not-allowed'}
                     `}>
                     {formatTime(s.start)}
                   </button>
@@ -85,7 +85,7 @@ export default function Reschedule() {
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-ink-100 flex justify-between">
+        <div className="mt-6 pt-5 border-t border-ink-200 flex justify-between">
           <button className="btn-outline" onClick={() => nav(-1)}><ChevronLeft size={14} /> Back</button>
           <button className="btn-primary" disabled={!pick || busy} onClick={submit}>
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}

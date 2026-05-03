@@ -22,10 +22,11 @@ import ServicesPage from './pages/ServicesPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 
 // Heavy pages with charts / large editors → lazy-loaded.
-const OrganiserPanel   = lazy(() => import('./pages/OrganiserPanel.jsx'));
-const OrganiserService = lazy(() => import('./pages/OrganiserService.jsx'));
-const OrganiserNew     = lazy(() => import('./pages/OrganiserNew.jsx'));
-const AdminPanel       = lazy(() => import('./pages/AdminPanel.jsx'));
+const OrganiserPanel    = lazy(() => import('./pages/OrganiserPanel.jsx'));
+const OrganiserService  = lazy(() => import('./pages/OrganiserService.jsx'));
+const OrganiserNew      = lazy(() => import('./pages/OrganiserNew.jsx'));
+const OrganiserMeetings = lazy(() => import('./pages/OrganiserMeetings.jsx'));
+const AdminPanel        = lazy(() => import('./pages/AdminPanel.jsx'));
 
 const Fallback = () => <div className="p-12 text-center text-ink-500">Loading…</div>;
 
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/saved"   element={<PrivateRoute><Saved /></PrivateRoute>} />
 
         <Route path="/organiser" element={<PrivateRoute roles={['organiser', 'admin']}><OrganiserPanel /></PrivateRoute>} />
+        <Route path="/organiser/meetings" element={<PrivateRoute roles={['organiser', 'admin']}><OrganiserMeetings /></PrivateRoute>} />
         <Route path="/organiser/new" element={<PrivateRoute roles={['organiser', 'admin']}><OrganiserNew /></PrivateRoute>} />
         <Route path="/organiser/services/:id" element={<PrivateRoute roles={['organiser', 'admin']}><OrganiserService /></PrivateRoute>} />
 

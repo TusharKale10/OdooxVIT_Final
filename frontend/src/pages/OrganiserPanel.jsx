@@ -120,7 +120,7 @@ export default function OrganiserPanel() {
                 </thead>
                 <tbody>
                   {reports.provider_utilization.map((p) => (
-                    <tr key={p.resource_id} className="border-t border-ink-100">
+                    <tr key={p.resource_id} className="border-t border-ink-200">
                       <td className="py-2">{p.service_name}</td>
                       <td className="py-2">{p.resource_name}</td>
                       <td className="py-2 text-right font-semibold">{p.bookings}</td>

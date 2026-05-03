@@ -13,6 +13,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { formatTime, formatINR } from '../utils/format';
 import { loadRazorpay, openRazorpay } from '../utils/razorpay';
 import UpiQrModal from '../components/UpiQrModal.jsx';
+import confetti from 'canvas-confetti';
+import { filterPhone, filterEmail, filterAlpha, onlyDigits, isValidPhone, isValidEmail } from '../utils/validators';
 
 // Identity questions ("Full name" / "Email" / "Phone number") that get
 // auto-filled (and visually muted) when the user is logged in.
@@ -93,6 +95,18 @@ export default function BookingFlow() {
 
   const [busy, setBusy] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  // Fire a single confetti burst when the booking is confirmed (step 6).
+  useEffect(() => {
+    if (step !== 6) return;
+    const fire = (delay, opts) => setTimeout(() => confetti({
+      particleCount: 70, spread: 70, startVelocity: 32, ticks: 220,
+      colors: ['#6366f1', '#a855f7', '#f59e0b', '#10b981', '#ec4899'],
+      ...opts,
+    }), delay);
+    fire(0,   { origin: { x: 0.2, y: 0.7 }, angle: 60 });
+    fire(220, { origin: { x: 0.8, y: 0.7 }, angle: 120 });
+    fire(450, { origin: { x: 0.5, y: 0.6 }, spread: 100, particleCount: 100 });
+  }, [step]);
   const [payConfig, setPayConfig] = useState({ upi_vpa: 'success@razorpay', upi_name: 'Schedula', is_mock: true });
   const [coupons, setCoupons] = useState([]);
   const [createdBooking, setCreatedBooking] = useState(null);
@@ -141,11 +155,16 @@ export default function BookingFlow() {
           if (cancelled) return;
           setSlots(d.slots);
           setSlotsReason(d.reason || null);
-          // Drop selection if the chosen slot disappeared / went full.
+          // Smart pre-pick: if user has no slot yet, auto-select the first
+          // available one (marked "Recommended" in the UI). Otherwise drop
+          // the selection if it disappeared or went full.
           setSlot((cur) => {
-            if (!cur) return cur;
-            const fresh = d.slots.find((s) => s.start === cur.start);
-            return fresh && fresh.available ? fresh : null;
+            if (cur) {
+              const fresh = d.slots.find((s) => s.start === cur.start);
+              return fresh && fresh.available ? fresh : null;
+            }
+            const firstFree = d.slots.find((s) => s.available);
+            return firstFree || null;
           });
         })
         .catch((e) => !cancelled && setError(e.message))
@@ -416,13 +435,16 @@ export default function BookingFlow() {
                   {!slotsLoading && slots.length > 0 && (
                     <>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4">
-                        {slots.map((s) => {
+                        {(() => {
+                          const firstFreeIdx = slots.findIndex((s) => s.available);
+                          return slots.map((s, idx) => {
                           const lockedTier = !s.available && s.requires_priority > 0;
                           const tierLabel = s.requires_priority >= 2 ? 'Platinum' : 'Gold';
+                          const isRecommended = idx === firstFreeIdx;
                           return (
                             <button key={s.start} disabled={!s.available}
                               onClick={() => setSlot(s)}
-                              title={lockedTier ? `${tierLabel}-only slot` : undefined}
+                              title={lockedTier ? `${tierLabel}-only slot` : isRecommended ? 'Earliest available' : undefined}
                               className={`px-3 py-2 rounded-xl text-sm font-medium border transition relative
                                 ${slot && slot.start === s.start
                                   ? 'bg-brand-600 text-white border-brand-600 shadow-soft'
@@ -430,8 +452,13 @@ export default function BookingFlow() {
                                     ? 'bg-white border-ink-200 text-ink-800 hover:border-brand-400 hover:text-brand-700'
                                     : lockedTier
                                       ? 'bg-amber-50 border-amber-200 text-amber-800 cursor-not-allowed'
-                                      : 'bg-ink-50 border-ink-100 text-ink-300 cursor-not-allowed'}
+                                      : 'bg-ink-50 border-ink-200 text-ink-300 cursor-not-allowed'}
                               `}>
+                              {isRecommended && s.available && (
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-400 text-amber-900 whitespace-nowrap shadow-soft">
+                                  ★ Pick
+                                </span>
+                              )}
                               {fmtTime(s.start)}
                               {lockedTier ? (
                                 <Crown size={10} className="absolute top-1 right-1 text-amber-600" />
@@ -446,7 +473,8 @@ export default function BookingFlow() {
                               ) : null}
                             </button>
                           );
-                        })}
+                        });
+                        })()}
                       </div>
                       {slots.some((s) => s.requires_priority > 0) && (
                         <div className="text-xs text-amber-700 mt-3 flex items-center gap-1">
@@ -486,11 +514,17 @@ export default function BookingFlow() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                       <div>
                         <label className="label">Their full name *</label>
-                        <input className="input" value={bookedForName} onChange={(e) => setBookedForName(e.target.value)} />
+                        <input className="input" value={bookedForName}
+                               onChange={(e) => setBookedForName(filterAlpha(e.target.value))} />
                       </div>
                       <div>
                         <label className="label">Their phone *</label>
-                        <input className="input" value={bookedForPhone} onChange={(e) => setBookedForPhone(e.target.value)} />
+                        <input type="tel" inputMode="numeric" className="input" value={bookedForPhone}
+                               onChange={(e) => setBookedForPhone(filterPhone(e.target.value))}
+                               placeholder="9876543210" />
+                        {bookedForPhone && !isValidPhone(bookedForPhone) && (
+                          <div className="text-[11px] text-rose-600 mt-1">Phone must be 10–15 digits.</div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -545,10 +579,23 @@ export default function BookingFlow() {
                                         </select>
                                       ) : (
                                         <input className="input"
-                                          type={q.field_type === 'email' ? 'email' : q.field_type === 'number' ? 'number' : q.field_type === 'phone' ? 'tel' : 'text'}
+                                          type={q.field_type === 'email' ? 'email' : q.field_type === 'number' ? 'text' : q.field_type === 'phone' ? 'tel' : 'text'}
+                                          inputMode={q.field_type === 'phone' || q.field_type === 'number' ? 'numeric' : undefined}
                                           value={answers[q.id] || ''}
-                                          onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+                                          onChange={(e) => {
+                                            let v = e.target.value;
+                                            if (q.field_type === 'phone')  v = filterPhone(v);
+                                            if (q.field_type === 'number') v = onlyDigits(v);
+                                            if (q.field_type === 'email')  v = filterEmail(v);
+                                            setAnswers({ ...answers, [q.id]: v });
+                                          }}
                                           required={!!q.is_required} />
+                                      )}
+                                      {answers[q.id] && q.field_type === 'phone' && !isValidPhone(answers[q.id]) && (
+                                        <div className="text-[11px] text-rose-600 mt-1">10–15 digits.</div>
+                                      )}
+                                      {answers[q.id] && q.field_type === 'email' && !isValidEmail(answers[q.id]) && (
+                                        <div className="text-[11px] text-rose-600 mt-1">Enter a valid email.</div>
                                       )}
                                     </div>
                                   ))}
@@ -719,7 +766,7 @@ export default function BookingFlow() {
             {pricing.credits > 0 && (
               <div className="flex justify-between text-amber-700"><span>Credits</span><span>−₹{pricing.credits.toFixed(2)}</span></div>
             )}
-            <div className="border-t border-ink-100 pt-2 flex justify-between font-bold text-ink-900">
+            <div className="border-t border-ink-200 pt-2 flex justify-between font-bold text-ink-900">
               <span>Total</span><span className="text-lg">₹{pricing.total.toFixed(2)}</span>
             </div>
             <div className="text-xs text-ink-500 mt-2 leading-relaxed flex items-start gap-2">

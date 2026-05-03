@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import ImageUploader from '../components/ImageUploader.jsx';
 import { isHttpUrl } from '../utils/format';
 import { useToast } from '../components/Toast.jsx';
+import { onlyDigits, onlyFloat, filterAlpha } from '../utils/validators';
 
 export default function OrganiserNew() {
   const nav = useNavigate();
@@ -115,10 +116,13 @@ export default function OrganiserNew() {
           <Section title="Basics">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2"><label className="label">Service name *</label>
-                <input className="input" value={f.name} onChange={set('name')} required /></div>
+                <input className="input" value={f.name}
+                       onChange={(e) => setF((c) => ({ ...c, name: e.target.value.slice(0, 160) }))} required />
+                <div className="text-[10px] text-ink-400 text-right mt-0.5">{f.name.length}/160</div></div>
               <div className="sm:col-span-2"><label className="label">Description</label>
-                <textarea className="input min-h-[88px]" value={f.description} onChange={set('description')}
-                          placeholder="What does this service include? Tone & length up to you." /></div>
+                <textarea className="input min-h-[68px]" value={f.description}
+                          onChange={(e) => setF((c) => ({ ...c, description: e.target.value }))}
+                          placeholder="What does this service include?" /></div>
               <div className="sm:col-span-2">
                 <ImageUploader value={f.image_url} onChange={(v) => setF((c) => ({ ...c, image_url: v }))} />
               </div>
@@ -210,17 +214,21 @@ export default function OrganiserNew() {
           <Section title="Pricing & duration">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className="label">Price (₹)</label>
-                <input type="number" min={0} step="0.01" className="input" value={f.price} onChange={set('price')} />
-                <div className="text-[11px] text-ink-500 mt-1">GST is auto-applied from the category — no manual tax entry.</div>
+                <input type="text" inputMode="decimal" className="input" value={f.price}
+                       onChange={(e) => setF((c) => ({ ...c, price: onlyFloat(e.target.value) }))} />
+                <div className="text-[11px] text-ink-500 mt-1">GST auto-applied per category — no manual tax.</div>
               </div>
               <div><label className="label">Tax-free threshold (₹)</label>
-                <input type="number" min={0} step="0.01" className="input" value={f.tax_threshold} onChange={set('tax_threshold')} />
-                <div className="text-[11px] text-ink-500 mt-1">Tax kicks in only when post-discount price ≥ this value.</div>
+                <input type="text" inputMode="decimal" className="input" value={f.tax_threshold}
+                       onChange={(e) => setF((c) => ({ ...c, tax_threshold: onlyFloat(e.target.value) }))} />
+                <div className="text-[11px] text-ink-500 mt-1">Tax kicks in only above this amount.</div>
               </div>
               <div><label className="label">Duration (min) *</label>
-                <input type="number" min={5} className="input" value={f.duration_minutes} onChange={set('duration_minutes')} required /></div>
+                <input type="text" inputMode="numeric" className="input" value={f.duration_minutes}
+                       onChange={(e) => setF((c) => ({ ...c, duration_minutes: onlyDigits(e.target.value) || '' }))} required /></div>
               <div><label className="label">Buffer between slots (min)</label>
-                <input type="number" min={0} className="input" value={f.buffer_minutes} onChange={set('buffer_minutes')} /></div>
+                <input type="text" inputMode="numeric" className="input" value={f.buffer_minutes}
+                       onChange={(e) => setF((c) => ({ ...c, buffer_minutes: onlyDigits(e.target.value) || '0' }))} /></div>
             </div>
           </Section>
 

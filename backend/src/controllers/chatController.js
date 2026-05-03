@@ -88,7 +88,7 @@ async function topServices(category) {
 }
 
 function intent(t) {
-  if (/^(hi|hello|hey|hola|namaste|ola)\b/.test(t)) return 'greet';
+  if (/^(hi|hii|hello|hey|hola|namaste|ola)\b/.test(t)) return 'greet';
   if (/(thank|thanks|thx)/.test(t)) return 'thanks';
   if (/(cancel|refund)/.test(t)) return 'cancel';
   if (/(reschedul|move|change.*time|change.*date)/.test(t)) return 'reschedule';

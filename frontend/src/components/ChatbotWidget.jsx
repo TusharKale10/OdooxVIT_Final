@@ -40,7 +40,7 @@ export default function ChatbotWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`fixed bottom-5 right-5 z-40 rounded-full shadow-lg transition-all ${open ? 'opacity-0 pointer-events-none' : 'opacity-100'} bg-gradient-to-br from-brand-500 to-brand-700 text-white px-4 py-3 flex items-center gap-2 hover:scale-105`}
+        className={`fixed bottom-20 lg:bottom-5 right-5 z-40 rounded-full shadow-lg transition-all ${open ? 'opacity-0 pointer-events-none' : 'opacity-100'} bg-gradient-to-br from-brand-500 to-brand-700 text-white px-4 py-3 flex items-center gap-2 hover:scale-105`}
       >
         <MessageCircle size={20} />
         <span className="font-medium text-sm hidden sm:inline">Ask Schedula</span>
@@ -76,7 +76,7 @@ export default function ChatbotWidget() {
               </div>
             )}
           </div>
-          <div className="border-t border-ink-100 p-2 flex gap-2 bg-white">
+          <div className="border-t border-ink-200 p-2 flex gap-2 bg-white">
             <input
               className="input"
               placeholder="Ask anything…"

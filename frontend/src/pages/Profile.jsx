@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../api/client';
 import { imageFor } from '../utils/serviceVisuals';
 import { formatDateTime } from '../utils/format';
+import { filterPhone, filterAlpha, isValidPhone } from '../utils/validators';
+import { useToast } from '../components/Toast.jsx';
+import JoinMeetingButton from '../components/JoinMeetingButton.jsx';
 
 const fmtDt = formatDateTime;
 
@@ -36,8 +39,8 @@ function ApptCard({ b, onCancel }) {
         </div>
         <div className="flex flex-wrap gap-2 mt-1">
           {b.payment_status !== 'not_required' && <span className="pill-slate">payment: {b.payment_status}</span>}
-          {b.appointment_type === 'virtual' && b.meeting_link && (
-            <a href={b.meeting_link} target="_blank" rel="noreferrer" className="pill-brand"><Video size={10} /> Join meeting</a>
+          {b.appointment_type === 'virtual' && b.status !== 'cancelled' && (
+            <JoinMeetingButton booking={b} size="sm" />
           )}
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
@@ -171,9 +174,12 @@ export default function Profile() {
           {info && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-3">{info}</div>}
           <form className="space-y-3" onSubmit={save}>
             <div><label className="label flex items-center gap-1"><User size={12} /> Full name</label>
-              <input className="input" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+              <input className="input" value={form.full_name}
+                     onChange={(e) => setForm({ ...form, full_name: filterAlpha(e.target.value) })} /></div>
             <div><label className="label flex items-center gap-1"><Phone size={12} /> Mobile number</label>
-              <input type="tel" className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g. 9876543210" /></div>
+              <input type="tel" inputMode="numeric" className="input" value={form.phone}
+                     onChange={(e) => setForm({ ...form, phone: filterPhone(e.target.value) })}
+                     placeholder="9876543210" /></div>
             <div><label className="label flex items-center gap-1"><Mail size={12} /> Email</label>
               <input className="input bg-ink-50" value={user?.email || ''} disabled /></div>
             <button type="submit" className="btn-primary w-full" disabled={busy}>
@@ -182,7 +188,7 @@ export default function Profile() {
           </form>
 
           {!user?.is_phone_verified && (
-            <div className="mt-4 pt-4 border-t border-ink-100">
+            <div className="mt-4 pt-4 border-t border-ink-200">
               <div className="text-xs text-ink-500 mb-2">Verify your phone to receive SMS reminders.</div>
               {!phoneOtpSent ? (
                 <button onClick={sendPhoneOtp} className="btn-outline w-full">Send phone OTP</button>

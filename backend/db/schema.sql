@@ -175,6 +175,7 @@ CREATE TABLE bookings (
   meeting_link    VARCHAR(500) NULL,
   appointment_type ENUM('in_person','virtual') NOT NULL DEFAULT 'in_person',
   reminder_sent   TINYINT(1) NOT NULL DEFAULT 0,
+  imminent_notify_sent TINYINT(1) NOT NULL DEFAULT 0,    -- "starts now" alert sent to both parties
   created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_book_service  FOREIGN KEY (service_id)  REFERENCES services(id),
@@ -345,6 +346,21 @@ CREATE TABLE saved_services (
   CONSTRAINT fk_save_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_save_service FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
   INDEX idx_save_user (user_id)
+) ENGINE=InnoDB;
+
+-- ---------- UPLOADED IMAGES (service card photos, avatars) ----------
+-- Binary stored in the DB itself (MEDIUMBLOB ≤ 16 MB) so deployments do not
+-- need a writable shared filesystem. Served via GET /uploads/:filename.
+CREATE TABLE uploaded_images (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  filename    VARCHAR(120) NOT NULL UNIQUE,
+  mime_type   VARCHAR(80)  NOT NULL,
+  size_bytes  INT          NOT NULL,
+  data        MEDIUMBLOB   NOT NULL,
+  uploaded_by INT          NULL,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_img_user FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_img_user (uploaded_by)
 ) ENGINE=InnoDB;
 
 -- ---------- BLOCKED / PREMIUM-RESERVED SLOTS ----------

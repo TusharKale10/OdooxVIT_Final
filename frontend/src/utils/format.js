@@ -54,6 +54,34 @@ export function formatINR(n, opts = {}) {
 
 export const isHttpUrl = (s) => /^https?:\/\/[^\s]+$/i.test(String(s || '').trim());
 
+// Mirrors backend utils/meeting.js. The join window opens 5 min before the
+// scheduled start and stays open until 15 min after the scheduled end.
+const JOIN_EARLY = 5 * 60 * 1000;
+const JOIN_LATE  = 15 * 60 * 1000;
+
+export function meetingJoinState(start, end, now = Date.now()) {
+  if (!start) return { state: 'unknown' };
+  const s = new Date(String(start).replace(' ', 'T')).getTime();
+  const e = new Date(String(end || start).replace(' ', 'T')).getTime();
+  const open  = s - JOIN_EARLY;
+  const close = e + JOIN_LATE;
+  if (now < open)  return { state: 'pending', minsToOpen: Math.ceil((open - now) / 60000), startsInMin: Math.ceil((s - now) / 60000) };
+  if (now > close) return { state: 'ended' };
+  return { state: 'live', minsRemaining: Math.ceil((close - now) / 60000) };
+}
+
+// Human-readable countdown: "in 2 days", "in 4 hrs", "in 12 min", "now"
+export function humanCountdown(min) {
+  if (min == null) return '';
+  if (min <= 0) return 'now';
+  if (min < 60) return `in ${min} min`;
+  const hrs = Math.floor(min / 60);
+  const rem = min % 60;
+  if (hrs < 24) return rem ? `in ${hrs}h ${rem}m` : `in ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `in ${days} day${days > 1 ? 's' : ''}`;
+}
+
 // Resolve relative /uploads URLs returned by the API to the full backend URL.
 export function resolveAsset(url) {
   if (!url) return '';

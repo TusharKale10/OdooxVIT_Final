@@ -59,7 +59,7 @@ export default function CategoryCard({ category }) {
   return (
     <Link
       to={category.route}
-      className={`cat-card border border-ink-100 group`}
+      className={`cat-card border border-ink-200 group`}
       aria-label={`Browse ${category.title} services`}
     >
       {/* Background image (always visible, before AND on hover) */}

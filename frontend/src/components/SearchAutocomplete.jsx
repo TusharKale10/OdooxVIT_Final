@@ -91,7 +91,7 @@ export default function SearchAutocomplete() {
         <div className="absolute left-0 right-0 mt-2 card overflow-hidden z-40 animate-fade-in">
           {showRecent && (
             <>
-              <div className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-ink-400 bg-ink-50 border-b border-ink-100">Recent</div>
+              <div className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-ink-400 bg-ink-50 border-b border-ink-200">Recent</div>
               {recent.map((r, i) => (
                 <button key={r}
                   onMouseEnter={() => setActive(i)}
@@ -110,7 +110,7 @@ export default function SearchAutocomplete() {
 
           {showResults && items.length > 0 && (
             <>
-              <div className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-ink-400 bg-ink-50 border-b border-ink-100">Suggestions</div>
+              <div className="px-3 py-2 text-[10px] uppercase tracking-wide font-semibold text-ink-400 bg-ink-50 border-b border-ink-200">Suggestions</div>
               {items.map((s, i) => (
                 <button key={s.id}
                   onMouseEnter={() => setActive(i)}
@@ -132,7 +132,7 @@ export default function SearchAutocomplete() {
                 </button>
               ))}
               <button onClick={() => goSearch()}
-                className="w-full px-3 py-2 text-xs text-brand-700 bg-brand-50 hover:bg-brand-100 font-medium border-t border-ink-100">
+                className="w-full px-3 py-2 text-xs text-brand-700 bg-brand-50 hover:bg-brand-100 font-medium border-t border-ink-200">
                 See all results for "{q}" →
               </button>
             </>

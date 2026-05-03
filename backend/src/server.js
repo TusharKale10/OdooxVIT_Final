@@ -1,5 +1,4 @@
 require('dotenv').config();
-const path    = require('path');
 const express = require('express');
 const cors    = require('cors');
 
@@ -24,11 +23,11 @@ const app = express();
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json({ limit: '1mb' }));
 
-// Static uploads — created lazily by uploadController.
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), {
-  maxAge: '7d',
-  fallthrough: true,
-}));
+// Image bytes are now stored in the DB (table: uploaded_images).
+// This route streams the BLOB; it falls back to the legacy on-disk file
+// if a row isn't found (so old URLs keep working during migration).
+const uploadCtrl = require('./controllers/uploadController');
+app.get('/uploads/:filename', uploadCtrl.serve);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

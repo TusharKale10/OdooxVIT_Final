@@ -173,7 +173,7 @@ export default function Payment() {
               <div className="flex justify-between text-amber-700"><span>Credits</span><span>−₹{Number(b.credits_used).toFixed(2)}</span></div>
             )}
             <div className="flex justify-between text-ink-500"><span>Status</span><span className="pill-amber">Awaiting payment</span></div>
-            <div className="border-t border-ink-100 pt-3 flex justify-between font-bold text-ink-900">
+            <div className="border-t border-ink-200 pt-3 flex justify-between font-bold text-ink-900">
               <span>Total</span><span className="text-lg">₹{Number(b.total_amount).toFixed(2)}</span>
             </div>
           </div>

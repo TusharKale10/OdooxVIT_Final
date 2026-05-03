@@ -156,7 +156,7 @@ export default function AdminPanel() {
             </thead>
             <tbody>
               {stats.provider_utilization.map((p) => (
-                <tr key={p.id} className="border-t border-ink-100">
+                <tr key={p.id} className="border-t border-ink-200">
                   <td className="py-2 font-medium">{p.full_name}</td>
                   <td className="py-2 text-right">{p.bookings}</td>
                   <td className="py-2 text-right">₹{Number(p.revenue).toLocaleString('en-IN')}</td>
@@ -184,7 +184,7 @@ export default function AdminPanel() {
             </thead>
             <tbody>
               {filtered.map((u) => (
-                <tr key={u.id} className="border-t border-ink-100">
+                <tr key={u.id} className="border-t border-ink-200">
                   <td className="py-2 font-medium">{u.full_name}</td>
                   <td className="py-2 text-ink-500">{u.email}</td>
                   <td className="py-2 text-ink-500">{u.city || '—'}</td>

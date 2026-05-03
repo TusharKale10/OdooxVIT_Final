@@ -46,7 +46,7 @@ export default function Credits() {
         ) : (
           <ul className="space-y-1">
             {data.transactions.map((t) => (
-              <li key={t.id} className="flex items-start justify-between gap-3 py-3 border-b border-ink-100 last:border-0">
+              <li key={t.id} className="flex items-start justify-between gap-3 py-3 border-b border-ink-200 last:border-0">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                     {t.amount > 0 ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}

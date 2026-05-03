@@ -143,7 +143,7 @@ export default function OrganiserService() {
       </div>
 
       <div className="card overflow-x-auto">
-        <div className="flex border-b border-ink-100">
+        <div className="flex border-b border-ink-200">
           {TABS.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition ${tab === t.key ? 'border-brand-600 text-brand-700' : 'border-transparent text-ink-500 hover:text-ink-700'}`}>
@@ -370,7 +370,7 @@ export default function OrganiserService() {
                 </thead>
                 <tbody>
                   {bookings.map((b) => (
-                    <tr key={b.id} className="border-t border-ink-100">
+                    <tr key={b.id} className="border-t border-ink-200">
                       <td className="py-2">{formatDateTime(b.start_datetime)}</td>
                       <td className="py-2">{b.customer_name}<div className="text-xs text-ink-500">{b.customer_email}</div></td>
                       <td className="py-2">{b.resource_name}</td>

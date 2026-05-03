@@ -4,6 +4,7 @@ import { CalendarPlus, ChevronLeft, Video, MapPin, RefreshCw, X, Star, Share2, C
 import { api } from '../api/client';
 import { imageFor } from '../utils/serviceVisuals';
 import { formatDateTime } from '../utils/format';
+import JoinMeetingButton from '../components/JoinMeetingButton.jsx';
 
 const fmtDate = formatDateTime;
 
@@ -115,12 +116,20 @@ export default function BookingConfirmed() {
             {b.discount_code && <Row label="Discount" value={b.discount_code} />}
           </div>
 
-          {b.appointment_type === 'virtual' && b.meeting_link && (
-            <a href={b.meeting_link} target="_blank" rel="noreferrer" className="btn-primary mt-5"><Video size={14} /> Join virtual meeting</a>
+          {b.appointment_type === 'virtual' && b.status !== 'cancelled' && (
+            <div className="mt-5">
+              <JoinMeetingButton booking={b} />
+              {b.meeting_state?.state === 'pending' && (
+                <p className="text-xs text-ink-500 mt-2">
+                  Your meeting room opens 5 minutes before the scheduled start.
+                  You'll get an email + in-app alert the moment it's ready.
+                </p>
+              )}
+            </div>
           )}
 
           {data.answers.length > 0 && (
-            <div className="mt-6 pt-5 border-t border-ink-100">
+            <div className="mt-6 pt-5 border-t border-ink-200">
               <h3 className="text-sm font-bold text-ink-700 uppercase tracking-wide mb-3">Submitted answers</h3>
               <div className="space-y-2 text-sm">
                 {data.answers.map((a, i) => (
@@ -133,7 +142,7 @@ export default function BookingConfirmed() {
             </div>
           )}
 
-          <div className="mt-6 pt-5 border-t border-ink-100 flex flex-wrap gap-2">
+          <div className="mt-6 pt-5 border-t border-ink-200 flex flex-wrap gap-2">
             {b.payment_status === 'pending' && b.status !== 'cancelled' && (
               <Link to={`/booking/${b.id}/pay`} className="btn-primary"><CreditCard size={14} /> Pay now (₹{Number(b.total_amount).toFixed(2)})</Link>
             )}
