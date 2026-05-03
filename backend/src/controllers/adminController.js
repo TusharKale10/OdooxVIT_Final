@@ -92,8 +92,38 @@ exports.dashboard = async (_req, res) => {
 
 exports.allUsers = async (_req, res) => {
   const [rows] = await pool.query(
-    'SELECT id, full_name, email, role, is_active, is_verified, phone, city, created_at FROM users ORDER BY id DESC');
+    'SELECT id, full_name, email, role, is_active, is_verified, phone, city, avatar_url, created_at FROM users ORDER BY id DESC');
   res.json({ users: rows });
+};
+
+// Admin feedback feed — supports ?sort=latest|highest, ?service_id=, ?limit=
+exports.allReviews = async (req, res) => {
+  const sort = String(req.query.sort || 'latest');
+  const orderBy = sort === 'highest' ? 'r.rating DESC, r.id DESC' : 'r.id DESC';
+  const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+  const sid = Number(req.query.service_id) || null;
+  const params = [];
+  let where = '';
+  if (sid) { where = 'WHERE r.service_id = ?'; params.push(sid); }
+  const [rows] = await pool.query(
+    `SELECT r.id, r.rating, r.comment, r.created_at,
+            r.service_id, s.name AS service_name,
+            r.customer_id, u.full_name AS customer_name, u.email AS customer_email,
+            r.booking_id
+       FROM reviews r
+       JOIN services s ON s.id = r.service_id
+       JOIN users    u ON u.id = r.customer_id
+       ${where}
+      ORDER BY ${orderBy}
+      LIMIT ${limit}`,
+    params);
+  const [[agg]] = await pool.query(
+    'SELECT COALESCE(AVG(rating),0) AS avg, COUNT(*) AS c FROM reviews');
+  res.json({
+    reviews: rows,
+    avg_rating: Number(agg.avg) || 0,
+    total: Number(agg.c) || 0,
+  });
 };
 
 exports.setActive = async (req, res) => {

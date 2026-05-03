@@ -9,7 +9,7 @@ function highlight(text, q) {
   const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
   const parts = String(text || '').split(re);
   return parts.map((p, i) =>
-    re.test(p) ? <mark key={i} className="bg-brand-100 text-brand-800 rounded px-0.5">{p}</mark> : p
+    re.test(p) ? <mark key={i} className="bg-accent-100 text-accent-800 rounded px-0.5">{p}</mark> : p
   );
 }
 
@@ -132,7 +132,7 @@ export default function SearchAutocomplete() {
                 </button>
               ))}
               <button onClick={() => goSearch()}
-                className="w-full px-3 py-2 text-xs text-brand-700 bg-brand-50 hover:bg-brand-100 font-medium border-t border-ink-200">
+                className="w-full px-3 py-2.5 text-xs text-ink-900 bg-ink-100 hover:bg-ink-200 font-semibold border-t border-ink-200">
                 See all results for "{q}" →
               </button>
             </>

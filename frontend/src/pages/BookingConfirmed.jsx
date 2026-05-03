@@ -73,12 +73,15 @@ export default function BookingConfirmed() {
     } catch { /* user cancelled */ }
   };
 
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const submitReview = async () => {
+    setError('');
     try {
       await api.post(`/services/${data.booking.service_id}/review`,
         { rating, comment, booking_id: data.booking.id });
       setReviewing(false);
-      alert('Thanks for your review!');
+      setReviewSubmitted(true);
+      setTimeout(() => setReviewSubmitted(false), 6000);
     } catch (e) { setError(e.message); }
   };
 
@@ -161,20 +164,28 @@ export default function BookingConfirmed() {
           </div>
 
           {reviewing && (
-            <div className="card p-4 mt-4 bg-ink-50">
-              <div className="font-semibold mb-2">Rate your experience</div>
+            <div className="rounded-2xl border border-ink-200 bg-ink-50/60 p-5 mt-4">
+              <div className="font-display font-semibold text-ink-900 mb-1 tracking-crisp">Rate your experience</div>
+              <p className="text-xs text-ink-500 mb-3">Your feedback helps other customers and is visible to the provider and admin.</p>
               <div className="flex gap-1 mb-3">
                 {[1,2,3,4,5].map((n) => (
-                  <button key={n} onClick={() => setRating(n)}>
-                    <Star size={20} className={n <= rating ? 'text-amber-500 fill-amber-500' : 'text-ink-300'} />
+                  <button key={n} type="button" onClick={() => setRating(n)} className="hover:scale-110 transition">
+                    <Star size={26} className={n <= rating ? 'text-amber-500 fill-amber-500' : 'text-ink-300'} />
                   </button>
                 ))}
+                <span className="ml-2 text-sm font-medium text-ink-600 self-center">{rating}/5</span>
               </div>
-              <textarea className="input min-h-[80px]" placeholder="Tell us about it…" value={comment} onChange={(e) => setComment(e.target.value)} />
+              <textarea className="input min-h-[88px]" placeholder="Tell us about it…" value={comment} onChange={(e) => setComment(e.target.value)} />
               <div className="flex gap-2 mt-3">
                 <button className="btn-primary" onClick={submitReview}>Submit review</button>
                 <button className="btn-ghost" onClick={() => setReviewing(false)}>Cancel</button>
               </div>
+            </div>
+          )}
+          {reviewSubmitted && (
+            <div className="rounded-2xl border border-sage-200 bg-sage-50 text-sage-800 p-4 mt-4 text-sm flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2"><Star size={14} className="text-sage-700 fill-sage-700" /> Thanks — your feedback is now visible in your profile.</span>
+              <Link to="/profile" className="font-semibold hover:underline whitespace-nowrap">View my feedback →</Link>
             </div>
           )}
         </div>

@@ -17,22 +17,21 @@ export default function Saved() {
   }, []);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900 flex items-center gap-2">
-          <Bookmark size={20} className="text-brand-600" /> Saved services
-        </h1>
-        <p className="text-sm text-ink-500">Quick-access list of services you've bookmarked.</p>
+        <span className="eyebrow"><Bookmark size={11} /> Library</span>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink-900 mt-2 tracking-tightest">Saved services</h1>
+        <p className="text-sm text-ink-500 mt-1.5">Quick-access list of services you've bookmarked.</p>
       </div>
 
       {error && <div className="card border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{error}</div>}
       {loading && <div className="text-sm text-ink-500">Loading…</div>}
 
       {!loading && !services.length && (
-        <div className="card p-12 text-center">
-          <div className="text-4xl mb-2">🔖</div>
-          <h3 className="font-semibold text-ink-900">No saved services yet</h3>
-          <p className="text-sm text-ink-500 mt-1 mb-4">Tap the bookmark icon on any service card to save it for later.</p>
+        <div className="card p-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-ink-100 mx-auto flex items-center justify-center text-2xl">🔖</div>
+          <h3 className="font-display text-xl font-semibold text-ink-900 mt-4 tracking-crisp">No saved services yet</h3>
+          <p className="text-sm text-ink-500 mt-2 mb-5 max-w-md mx-auto">Tap the bookmark icon on any service card to save it for later.</p>
           <Link to="/" className="btn-primary inline-flex">Browse services</Link>
         </div>
       )}

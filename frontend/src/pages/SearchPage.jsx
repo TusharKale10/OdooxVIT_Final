@@ -42,15 +42,21 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <button onClick={() => nav(-1)} className="btn-ghost"><ChevronLeft size={16} /> Back</button>
 
-      <div className="card p-3 flex items-center gap-2">
-        <Search size={16} className="ml-2 text-ink-400 flex-shrink-0" />
+      <div>
+        <span className="eyebrow">Search</span>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink-900 mt-2 tracking-tightest">Find your next slot.</h1>
+        <p className="text-ink-500 mt-2 text-sm sm:text-base max-w-xl">Search by service, category, city or organiser. Results update as you type.</p>
+      </div>
+
+      <div className="card p-2 flex items-center gap-2">
+        <Search size={18} className="ml-3 text-ink-400 flex-shrink-0" />
         <input
           autoFocus
-          className="flex-1 bg-transparent border-0 outline-none px-2 py-2 text-base placeholder-ink-400"
-          placeholder="Search by service, category, city or organiser…"
+          className="flex-1 bg-transparent border-0 outline-none px-2 py-3 text-base placeholder-ink-400"
+          placeholder="Try “dentist near me”, “career coach”, “yoga class”…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -62,8 +68,11 @@ export default function SearchPage() {
       {error && <div className="card border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{error}</div>}
 
       {!query && (
-        <div className="card p-12 text-center text-ink-500">
-          Type at least one character to search across services, categories and cities.
+        <div className="card p-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-ink-100 mx-auto flex items-center justify-center text-ink-400">
+            <Search size={22} />
+          </div>
+          <p className="text-sm text-ink-500 mt-4 max-w-md mx-auto">Type at least one character to search across services, categories and cities.</p>
         </div>
       )}
 
@@ -82,17 +91,19 @@ export default function SearchPage() {
       )}
 
       {query && !loading && !results.length && !error && (
-        <div className="card p-12 text-center">
-          <div className="text-4xl mb-2">🔍</div>
-          <h3 className="font-semibold text-ink-900">No services found for "{query}"</h3>
-          <p className="text-sm text-ink-500 mt-1 mb-4">Try a different keyword, city, or category.</p>
+        <div className="card p-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-ink-100 mx-auto flex items-center justify-center text-2xl">🔍</div>
+          <h3 className="font-display text-xl font-semibold text-ink-900 mt-4 tracking-crisp">No services for "{query}"</h3>
+          <p className="text-sm text-ink-500 mt-2 mb-5 max-w-md mx-auto">Try a different keyword, broaden the city, or jump back to a category.</p>
           <Link to="/" className="btn-primary inline-flex">Browse all categories</Link>
         </div>
       )}
 
       {query && !loading && results.length > 0 && (
         <>
-          <div className="text-sm text-ink-500">{results.length} result{results.length !== 1 ? 's' : ''} for <b className="text-ink-800">"{query}"</b></div>
+          <div className="text-sm text-ink-500">
+            <span className="font-display font-semibold text-ink-900">{results.length}</span> result{results.length !== 1 ? 's' : ''} for <span className="text-ink-800 font-medium">"{query}"</span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {results.map((s) => (
               <ServiceCard key={s.id} service={s} savedIds={savedIds} onToggleSaved={onToggleSaved} />

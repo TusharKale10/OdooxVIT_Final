@@ -533,7 +533,7 @@ exports.review = async (req, res) => {
   const { rating, comment, booking_id } = req.body;
   const r = Math.max(1, Math.min(5, Number(rating)));
   if (!r) throw new HttpError(400, 'rating required (1..5)');
-  await pool.query(
+  const [ins] = await pool.query(
     `INSERT INTO reviews (service_id, customer_id, booking_id, rating, comment) VALUES (?,?,?,?,?)`,
     [sid, req.user.id, booking_id || null, r, String(comment || '').slice(0, 500)]);
 
@@ -542,5 +542,24 @@ exports.review = async (req, res) => {
   await pool.query(
     'UPDATE services SET rating=?, rating_count=? WHERE id=?',
     [Number(agg[0].avg).toFixed(2), Number(agg[0].c), sid]);
-  res.status(201).json({ message: 'reviewed' });
+  res.status(201).json({ message: 'reviewed', id: ins.insertId });
+};
+
+// Reviews submitted by the current user — used in Profile "My feedback".
+// Supports ?sort=latest|highest (default: latest).
+exports.myReviews = async (req, res) => {
+  const sort = String(req.query.sort || 'latest');
+  const orderBy = sort === 'highest'
+    ? 'r.rating DESC, r.id DESC'
+    : 'r.id DESC';
+  const [rows] = await pool.query(
+    `SELECT r.id, r.rating, r.comment, r.created_at,
+            r.service_id, s.name AS service_name, s.image_url AS service_image,
+            r.booking_id
+       FROM reviews r
+       JOIN services s ON s.id = r.service_id
+      WHERE r.customer_id = ?
+      ORDER BY ${orderBy}`,
+    [req.user.id]);
+  res.json({ reviews: rows });
 };

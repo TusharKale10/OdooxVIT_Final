@@ -12,6 +12,7 @@ const sanitize = (u) => ({
   is_phone_verified: !!u.is_phone_verified,
   preferred_language: u.preferred_language || 'en',
   country: u.country, state: u.state, district: u.district, city: u.city,
+  avatar_url: u.avatar_url || null,
 });
 
 // Strip non-digits, accept 10–15 digit numbers (10 for IN local, more for E.164).
@@ -143,7 +144,8 @@ exports.reset = async (req, res) => {
 exports.me = async (req, res) => {
   const [rows] = await pool.query(
     `SELECT id, full_name, email, role, is_verified, is_phone_verified, phone,
-            preferred_language, country, state, district, city, latitude, longitude
+            preferred_language, country, state, district, city, latitude, longitude,
+            avatar_url
        FROM users WHERE id=?`,
     [req.user.id]);
   if (!rows.length) throw new HttpError(404, 'User not found');
@@ -152,9 +154,17 @@ exports.me = async (req, res) => {
 };
 
 exports.updateMe = async (req, res) => {
-  const { full_name, phone, preferred_language, country, state, district, city, latitude, longitude } = req.body;
+  const { full_name, phone, preferred_language, country, state, district, city, latitude, longitude, avatar_url } = req.body;
   if (phone != null && phone !== '' && !isValidPhone(phone))
     throw new HttpError(400, 'Mobile number must be 10–15 digits');
+  // avatar_url accepts: null/'' to clear, '/uploads/...' or absolute http(s) URL.
+  let cleanedAvatar = avatar_url;
+  if (cleanedAvatar !== undefined && cleanedAvatar !== null) {
+    cleanedAvatar = String(cleanedAvatar).trim();
+    if (cleanedAvatar !== '' && !/^(https?:\/\/|\/uploads\/)/.test(cleanedAvatar)) {
+      throw new HttpError(400, 'avatar_url must be an uploaded path or absolute URL');
+    }
+  }
 
   await pool.query(
     `UPDATE users SET
@@ -166,17 +176,24 @@ exports.updateMe = async (req, res) => {
         district=COALESCE(?,district),
         city=COALESCE(?,city),
         latitude=COALESCE(?,latitude),
-        longitude=COALESCE(?,longitude)
+        longitude=COALESCE(?,longitude),
+        avatar_url=COALESCE(?,avatar_url)
        WHERE id=?`,
     [full_name || null, phone ? normalizePhone(phone) : null,
      preferred_language || null,
      country || null, state || null, district || null, city || null,
      latitude ?? null, longitude ?? null,
+     cleanedAvatar === undefined ? null : (cleanedAvatar === '' ? null : cleanedAvatar),
      req.user.id]
   );
+  // Allow explicit clearing — if avatar_url was explicitly '' in the request,
+  // run a second nullify since COALESCE skipped it above.
+  if (avatar_url === '' || avatar_url === null) {
+    await pool.query('UPDATE users SET avatar_url=NULL WHERE id=?', [req.user.id]);
+  }
   const [rows] = await pool.query(
     `SELECT id, full_name, email, role, is_verified, is_phone_verified, phone,
-            preferred_language, country, state, district, city
+            preferred_language, country, state, district, city, avatar_url
        FROM users WHERE id=?`,
     [req.user.id]);
   const u = rows[0];

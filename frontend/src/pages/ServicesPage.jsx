@@ -112,14 +112,16 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <button onClick={() => nav(-1)} className="btn-ghost"><ChevronLeft size={16} /> Back</button>
 
-      {/* Hero */}
-      <header className={`relative overflow-hidden rounded-3xl p-8 sm:p-12 text-white bg-gradient-to-br ${cat.gradient}`}>
-        <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_30%_20%,white,transparent_55%)]" />
-        <div className="absolute -bottom-16 -right-16 w-72 h-72 rounded-full bg-white/15 blur-3xl" />
+      {/* Hero — editorial paper card with a tasteful color hint from the category */}
+      <header className="relative overflow-hidden rounded-3xl border border-ink-200 bg-white p-8 sm:p-14">
+        <div className={`absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-gradient-to-br ${cat.gradient} opacity-20 blur-3xl`} />
+        <div className="absolute -bottom-32 -left-24 w-80 h-80 rounded-full bg-accent-100/50 blur-3xl" />
         <div className="relative max-w-2xl">
-          <span className="pill bg-white/20 text-white backdrop-blur"><Sparkles size={12} /> {cat.title}</span>
-          <h1 className="text-3xl sm:text-5xl font-bold mt-4 leading-tight">{cat.title}</h1>
-          <p className="text-white/90 mt-3 text-base sm:text-lg">{cat.description}</p>
+          <span className="eyebrow"><Sparkles size={11} className="text-accent-500" /> {cat.title} services</span>
+          <h1 className="font-display text-4xl sm:text-6xl font-semibold mt-4 leading-[1.04] tracking-tightest text-ink-900">
+            {cat.title}.
+          </h1>
+          <p className="text-ink-600 mt-5 text-base sm:text-lg leading-relaxed max-w-xl">{cat.description}</p>
         </div>
       </header>
 
@@ -187,12 +189,12 @@ export default function ServicesPage() {
 
       {/* Empty */}
       {!loading && !filtered.length && (
-        <div className="card p-12 text-center">
-          <div className="text-4xl mb-2">🪄</div>
-          <h3 className="font-semibold text-ink-900">Nothing here yet in {cat.title}</h3>
-          <p className="text-sm text-ink-500 mt-1 mb-4">Try clearing filters or another category.</p>
+        <div className="card p-14 text-center">
+          <div className="w-14 h-14 rounded-full bg-ink-100 mx-auto flex items-center justify-center text-2xl">🪄</div>
+          <h3 className="font-display text-xl font-semibold text-ink-900 mt-4 tracking-crisp">Nothing here yet in {cat.title}</h3>
+          <p className="text-sm text-ink-500 mt-2 mb-5 max-w-md mx-auto">Try clearing filters, broadening the location, or exploring a different category.</p>
           {activeFilters > 0
-            ? <button onClick={clearFilters} className="btn-soft">Clear filters</button>
+            ? <button onClick={clearFilters} className="btn-outline">Clear filters</button>
             : <Link to="/" className="btn-primary inline-flex">Browse all categories</Link>}
         </div>
       )}
@@ -207,16 +209,19 @@ export default function ServicesPage() {
       )}
 
       {/* Sibling categories navigator */}
-      <section className="card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-ink-900">Browse another category</h3>
-          <Link to="/" className="text-sm text-brand-600 hover:underline inline-flex items-center gap-1">
+      <section className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <span className="eyebrow">Keep exploring</span>
+            <h3 className="font-display text-lg font-semibold text-ink-900 mt-1 tracking-crisp">Browse another category</h3>
+          </div>
+          <Link to="/" className="text-sm font-medium text-ink-900 inline-flex items-center gap-1.5 hover:gap-2 transition-all">
             All categories <ArrowRight size={14} />
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.filter((c) => c.id !== cat.id).map((c) => (
-            <Link key={c.id} to={c.route} className={`pill ${c.chipBg} hover:opacity-80 transition`}>
+            <Link key={c.id} to={c.route} className="pill-outline hover:bg-ink-50 hover:border-ink-400 transition">
               {c.title}
             </Link>
           ))}

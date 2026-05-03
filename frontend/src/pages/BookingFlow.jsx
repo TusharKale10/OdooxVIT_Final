@@ -41,24 +41,34 @@ const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(
 const fmtTime = (mysqlDt) => formatTime(mysqlDt);
 
 function Stepper({ current }) {
+  const pct = (current / (STEPS.length - 1)) * 100;
   return (
-    <ol className="grid grid-cols-7 gap-1">
-      {STEPS.map((s, i) => {
-        const done = i < current;
-        const active = i === current;
-        return (
-          <li key={s.key} className="flex flex-col items-center text-center gap-1">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition
-              ${done ? 'bg-brand-600 text-white' : active ? 'bg-brand-50 text-brand-700 ring-2 ring-brand-300' : 'bg-ink-100 text-ink-400'}`}>
-              {done ? <Check size={14} /> : i + 1}
-            </div>
-            <span className={`text-[10px] sm:text-xs font-medium ${active ? 'text-ink-900' : 'text-ink-500'} truncate max-w-full`}>
-              {s.label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] font-semibold text-ink-500">
+        <span>Step {current + 1} of {STEPS.length}</span>
+        <span className="text-ink-900">{STEPS[current].label}</span>
+      </div>
+      <div className="relative h-1.5 rounded-full bg-ink-100 overflow-hidden">
+        <div className="absolute inset-y-0 left-0 bg-ink-900 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+      </div>
+      <ol className="grid grid-cols-7 gap-1 pt-1">
+        {STEPS.map((s, i) => {
+          const done = i < current;
+          const active = i === current;
+          return (
+            <li key={s.key} className="flex flex-col items-center text-center gap-1.5">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition
+                ${done ? 'bg-ink-900 text-white' : active ? 'bg-white text-ink-900 ring-2 ring-ink-900' : 'bg-ink-100 text-ink-400'}`}>
+                {done ? <Check size={12} /> : i + 1}
+              </div>
+              <span className={`text-[10px] sm:text-[11px] font-medium ${active ? 'text-ink-900' : 'text-ink-500'} truncate max-w-full`}>
+                {s.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -328,8 +338,14 @@ export default function BookingFlow() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <button onClick={() => nav(-1)} className="btn-ghost mb-4"><ChevronLeft size={16} /> Back</button>
-      <div className="card p-5 mb-5"><Stepper current={step} /></div>
+      <button onClick={() => nav(-1)} className="btn-ghost mb-5"><ChevronLeft size={16} /> Back</button>
+
+      <div className="mb-6">
+        <span className="eyebrow">Booking</span>
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-900 mt-2 tracking-crisp">Reserve your slot</h1>
+      </div>
+
+      <div className="card p-5 sm:p-6 mb-5"><Stepper current={step} /></div>
 
       {error && (
         <div className="card border-rose-200 bg-rose-50 text-rose-700 p-3 mb-4 text-sm">{error}</div>
@@ -348,23 +364,24 @@ export default function BookingFlow() {
             >
               {step === 0 && (
                 <div>
-                  <h2 className="text-lg font-bold text-ink-900">{service.name}</h2>
-                  <p className="text-sm text-ink-500 mt-1">{service.description}</p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="pill-brand"><Clock size={12} /> {service.duration_minutes} min</span>
+                  <span className="eyebrow">About this service</span>
+                  <h2 className="font-display text-2xl font-semibold text-ink-900 mt-2 tracking-crisp">{service.name}</h2>
+                  <p className="text-sm text-ink-600 mt-2 leading-relaxed">{service.description}</p>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <span className="pill-outline"><Clock size={12} /> {service.duration_minutes} min</span>
                     {service.appointment_type === 'virtual' ? (
-                      <span className="pill-green"><Video size={12} /> Virtual</span>
+                      <span className="pill-brand"><Video size={12} /> Virtual</span>
                     ) : (
-                      <span className="pill-amber"><MapPin size={12} /> In-person</span>
+                      <span className="pill-accent"><MapPin size={12} /> In-person</span>
                     )}
                     {service.category_name && <span className="pill-slate">{service.category_name}</span>}
                     {Number(service.rating) > 0 && (
                       <span className="pill-amber"><Star size={12} fill="currentColor" /> {Number(service.rating).toFixed(1)} ({service.rating_count})</span>
                     )}
                   </div>
-                  <div className="text-sm text-ink-700 mt-4 space-y-1">
-                    {service.venue && <div className="flex items-center gap-2"><MapPin size={14} /> {service.venue}</div>}
-                    <div className="flex items-center gap-2"><User size={14} /> {service.organiser_name}</div>
+                  <div className="text-sm text-ink-700 mt-5 space-y-1.5">
+                    {service.venue && <div className="flex items-center gap-2"><MapPin size={14} className="text-ink-400" /> {service.venue}</div>}
+                    <div className="flex items-center gap-2"><User size={14} className="text-ink-400" /> {service.organiser_name}</div>
                   </div>
                 </div>
               )}
@@ -411,75 +428,104 @@ export default function BookingFlow() {
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 3 && (() => {
+                // Visibility rule: only show slots that are bookable now (available)
+                // OR locked behind a tier upgrade (kept visible as an upsell).
+                // Booked / unavailable / blocked slots are hidden entirely.
+                const visibleSlots = slots.filter((s) => s.available || s.requires_priority > 0);
+                const availableCount = visibleSlots.filter((s) => s.available).length;
+                const upgradeLockedCount = visibleSlots.filter((s) => !s.available).length;
+
+                return (
                 <div>
                   <h2 className="text-lg font-bold text-ink-900">Select a slot</h2>
-                  <p className="text-sm text-ink-500 mt-1">Real-time availability for <b>{date}</b>. {service.buffer_minutes ? `${service.buffer_minutes}-min buffer between slots.` : ''}</p>
-                  {slotsLoading && (
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4">
-                      {Array.from({ length: 10 }).map((_, i) => <div key={i} className="h-10 shimmer-bg rounded-lg" />)}
+                  <p className="text-sm text-ink-500 mt-1">
+                    Real-time availability for <b>{date}</b>.
+                    {service.buffer_minutes ? ` ${service.buffer_minutes}-min buffer between slots.` : ''}
+                  </p>
+
+                  {/* Color legend */}
+                  {!slotsLoading && availableCount > 0 && (
+                    <div className="flex items-center gap-4 mt-3 text-[11px] text-ink-500">
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-sage-400" /> Available</span>
+                      <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ink-900" /> Selected</span>
+                      {upgradeLockedCount > 0 && (
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Premium-only</span>
+                      )}
                     </div>
                   )}
-                  {!slotsLoading && !slots.length && (
-                    <div className="card border-amber-200 bg-amber-50 text-amber-800 p-3 mt-4 text-sm">
+
+                  {slotsLoading && (
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4">
+                      {Array.from({ length: 10 }).map((_, i) => <div key={i} className="h-12 shimmer-bg rounded-xl" />)}
+                    </div>
+                  )}
+
+                  {!slotsLoading && !visibleSlots.length && (
+                    <div className="card border-amber-200 bg-amber-50 text-amber-800 p-4 mt-4 text-sm leading-relaxed">
                       {slotsReason === 'no_resources'         && 'This service has no providers configured yet.'}
                       {slotsReason === 'no_schedule_today'    && 'Provider does not work on this weekday — try another date.'}
                       {slotsReason === 'no_flex_window_today' && 'No flexible windows for this date.'}
-                      {slotsReason === 'all_full'             && 'All slots booked for this day.'}
+                      {(slotsReason === 'all_full' || (!slotsReason && slots.length > 0))
+                                                              && 'All slots are booked for this day. Try another date.'}
                       {slotsReason === 'date_blocked'         && 'This date is blocked by the organiser. Pick another day.'}
                       {slotsReason === 'beyond_horizon_upgrade' && (<>📅 Silver members can only book within 14 days. <a href="/plans" className="underline font-semibold">Upgrade to Gold</a> for 30-day visibility, or Platinum for unlimited.</>)}
                       {slotsReason === 'beyond_horizon_platinum' && (<>📅 Gold members can book within 30 days. <a href="/plans" className="underline font-semibold">Upgrade to Platinum</a> for unlimited horizon.</>)}
-                      {!slotsReason                           && 'No slots for this day.'}
+                      {!slotsReason && !slots.length          && 'No slots for this day.'}
                     </div>
                   )}
-                  {!slotsLoading && slots.length > 0 && (
+
+                  {!slotsLoading && visibleSlots.length > 0 && (
                     <>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-4">
                         {(() => {
-                          const firstFreeIdx = slots.findIndex((s) => s.available);
-                          return slots.map((s, idx) => {
+                          const firstFreeIdx = visibleSlots.findIndex((s) => s.available);
+                          return visibleSlots.map((s, idx) => {
                           const lockedTier = !s.available && s.requires_priority > 0;
                           const tierLabel = s.requires_priority >= 2 ? 'Platinum' : 'Gold';
                           const isRecommended = idx === firstFreeIdx;
+                          const isSelected = slot && slot.start === s.start;
                           return (
                             <button key={s.start} disabled={!s.available}
                               onClick={() => setSlot(s)}
-                              title={lockedTier ? `${tierLabel}-only slot` : isRecommended ? 'Earliest available' : undefined}
-                              className={`px-3 py-2 rounded-xl text-sm font-medium border transition relative
-                                ${slot && slot.start === s.start
-                                  ? 'bg-brand-600 text-white border-brand-600 shadow-soft'
+                              title={lockedTier ? `${tierLabel}-only slot — upgrade to unlock` : isRecommended ? 'Earliest available' : undefined}
+                              className={`group relative px-3 py-3 rounded-xl text-sm font-semibold border transition-all duration-200 active:scale-[0.97]
+                                ${isSelected
+                                  ? 'bg-ink-900 text-white border-ink-900 shadow-pop'
                                   : s.available
-                                    ? 'bg-white border-ink-200 text-ink-800 hover:border-brand-400 hover:text-brand-700'
-                                    : lockedTier
-                                      ? 'bg-amber-50 border-amber-200 text-amber-800 cursor-not-allowed'
-                                      : 'bg-ink-50 border-ink-200 text-ink-300 cursor-not-allowed'}
+                                    ? 'bg-sage-50 border-sage-200 text-sage-800 hover:border-sage-500 hover:bg-sage-100 hover:-translate-y-0.5'
+                                    : 'bg-amber-50/70 border-amber-200 text-amber-800 cursor-not-allowed'}
                               `}>
-                              {isRecommended && s.available && (
-                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-amber-400 text-amber-900 whitespace-nowrap shadow-soft">
+                              {isRecommended && s.available && !isSelected && (
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[9px] font-bold rounded-full bg-accent-500 text-white whitespace-nowrap shadow-soft">
                                   ★ Pick
                                 </span>
                               )}
-                              {fmtTime(s.start)}
-                              {lockedTier ? (
-                                <Crown size={10} className="absolute top-1 right-1 text-amber-600" />
-                              ) : null}
+                              <span className="block">{fmtTime(s.start)}</span>
+                              {lockedTier && (
+                                <Crown size={11} className="absolute top-1.5 right-1.5 text-amber-600" />
+                              )}
                               {Boolean(service.manage_capacity) && s.available ? (
-                                <span className={`block text-[10px] mt-0.5 ${slot && slot.start === s.start ? 'text-white/80' : 'text-ink-400'}`}>
+                                <span className={`block text-[10px] mt-0.5 font-medium ${isSelected ? 'text-white/80' : 'text-sage-700/80'}`}>
                                   {s.capacity_remaining} left
                                 </span>
-                              ) : null}
-                              {!s.available && !lockedTier ? (
-                                <span className="block text-[10px] mt-0.5 text-ink-400">full</span>
+                              ) : lockedTier ? (
+                                <span className="block text-[10px] mt-0.5 font-medium text-amber-700">{tierLabel}</span>
                               ) : null}
                             </button>
                           );
                         });
                         })()}
                       </div>
-                      {slots.some((s) => s.requires_priority > 0) && (
-                        <div className="text-xs text-amber-700 mt-3 flex items-center gap-1">
+                      {upgradeLockedCount > 0 && (
+                        <div className="text-xs text-amber-800 mt-3 flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
                           <Crown size={12} /> Slots marked with a crown are reserved for Gold/Platinum members.
-                          <a href="/plans" className="underline ml-1">Upgrade →</a>
+                          <a href="/plans" className="underline font-semibold ml-1">Upgrade →</a>
+                        </div>
+                      )}
+                      {availableCount === 0 && upgradeLockedCount > 0 && (
+                        <div className="text-xs text-ink-500 mt-2 italic">
+                          No standard slots remain — premium tiers unlock the times above.
                         </div>
                       )}
                     </>
@@ -493,7 +539,8 @@ export default function BookingFlow() {
                     </div>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
               {step === 4 && (
                 <div>
@@ -626,18 +673,19 @@ export default function BookingFlow() {
               )}
 
               {step === 6 && (
-                <div className="text-center py-6">
+                <div className="text-center py-8">
                   <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', damping: 14 }}
-                    className="mx-auto w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                    <Check size={32} />
+                    className="mx-auto w-20 h-20 rounded-full bg-sage-50 border border-sage-200 text-sage-600 flex items-center justify-center">
+                    <Check size={36} strokeWidth={2.4} />
                   </motion.div>
-                  <h2 className="text-2xl font-bold text-ink-900 mt-4">Booking confirmed!</h2>
-                  <p className="text-sm text-ink-500 mt-1">A confirmation has been emailed to you.</p>
+                  <span className="eyebrow inline-flex mt-5">Confirmed</span>
+                  <h2 className="font-display text-3xl font-semibold text-ink-900 mt-3 tracking-tightest">You're booked.</h2>
+                  <p className="text-sm text-ink-500 mt-2">A confirmation is on its way to your inbox.</p>
                   {createdBooking?.meeting_link && (
-                    <a href={createdBooking.meeting_link} target="_blank" rel="noreferrer" className="btn-primary mt-5"><Video size={14} /> Join virtual meeting</a>
+                    <a href={createdBooking.meeting_link} target="_blank" rel="noreferrer" className="btn-accent mt-6"><Video size={14} /> Join virtual meeting</a>
                   )}
-                  <div className="flex justify-center gap-2 mt-6">
+                  <div className="flex justify-center gap-2 mt-7">
                     <button className="btn-outline" onClick={() => nav('/profile')}>My bookings</button>
                     <button className="btn-primary" onClick={() => nav(`/booking/${createdBooking.id}`)}>View booking</button>
                   </div>
@@ -675,13 +723,14 @@ export default function BookingFlow() {
         <aside className="space-y-3 lg:sticky lg:top-24 self-start">
           <div className="card overflow-hidden">
             <div className="aspect-[16/9] bg-cover bg-center" style={{ backgroundImage: `url(${imageFor(service)})` }} />
-            <div className="p-4">
-              <div className="font-bold text-ink-900">{service.name}</div>
-              <div className="text-xs text-ink-500 mt-1">{service.organiser_name}</div>
-              <div className="mt-3 space-y-1.5 text-sm">
-                {date && <div className="flex items-center gap-2 text-ink-600"><CalIcon size={14} /> {date}</div>}
-                {slot && <div className="flex items-center gap-2 text-ink-600"><Clock size={14} /> {fmtTime(slot.start)} ({service.duration_minutes} min)</div>}
-                {service.venue && <div className="flex items-center gap-2 text-ink-600"><MapPin size={14} /> {service.venue}</div>}
+            <div className="p-5">
+              <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-ink-400 mb-2">Your booking</div>
+              <div className="font-display font-semibold text-ink-900 text-lg leading-snug tracking-crisp">{service.name}</div>
+              <div className="text-xs text-ink-500 mt-1">by {service.organiser_name}</div>
+              <div className="mt-4 space-y-2 text-sm border-t border-ink-200 pt-3">
+                {date && <div className="flex items-center gap-2 text-ink-700"><CalIcon size={14} className="text-ink-400" /> {date}</div>}
+                {slot && <div className="flex items-center gap-2 text-ink-700"><Clock size={14} className="text-ink-400" /> {fmtTime(slot.start)} <span className="text-ink-400">·</span> {service.duration_minutes} min</div>}
+                {service.venue && <div className="flex items-center gap-2 text-ink-700"><MapPin size={14} className="text-ink-400" /> {service.venue}</div>}
               </div>
             </div>
           </div>
@@ -752,26 +801,28 @@ export default function BookingFlow() {
             </div>
           )}
 
-          <div className="card p-4 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span>₹{pricing.subtotal.toFixed(2)}</span></div>
+          <div className="card p-5 space-y-2.5 text-sm">
+            <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-ink-400 mb-1">Order summary</div>
+            <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span className="font-medium">₹{pricing.subtotal.toFixed(2)}</span></div>
             {pricing.discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-700"><span>Discount</span><span>−₹{pricing.discountAmount.toFixed(2)}</span></div>
+              <div className="flex justify-between text-sage-700"><span>Discount</span><span>−₹{pricing.discountAmount.toFixed(2)}</span></div>
             )}
             <div className="flex justify-between">
               <span className="text-ink-500">
                 GST {service.effective_tax_percent ? `@ ${Number(service.effective_tax_percent)}%` : ''}{Number(service.tax_threshold) > 0 ? ` (over ₹${service.tax_threshold})` : ''}
               </span>
-              <span>{pricing.tax > 0 ? `₹${pricing.tax.toFixed(2)}` : '—'}</span>
+              <span className="font-medium">{pricing.tax > 0 ? `₹${pricing.tax.toFixed(2)}` : '—'}</span>
             </div>
             {pricing.credits > 0 && (
-              <div className="flex justify-between text-amber-700"><span>Credits</span><span>−₹{pricing.credits.toFixed(2)}</span></div>
+              <div className="flex justify-between text-accent-700"><span>Credits</span><span>−₹{pricing.credits.toFixed(2)}</span></div>
             )}
-            <div className="border-t border-ink-200 pt-2 flex justify-between font-bold text-ink-900">
-              <span>Total</span><span className="text-lg">₹{pricing.total.toFixed(2)}</span>
+            <div className="border-t border-ink-200 pt-3 flex justify-between items-end">
+              <span className="font-display font-semibold text-ink-900">Total</span>
+              <span className="font-display text-2xl font-bold text-ink-900 tracking-tightest">₹{pricing.total.toFixed(2)}</span>
             </div>
-            <div className="text-xs text-ink-500 mt-2 leading-relaxed flex items-start gap-2">
-              <Sparkles size={12} className="mt-0.5 flex-shrink-0" />
-              <span>{requiresPayment ? 'Advance payment required to confirm.' : service.manual_confirmation ? 'Reserved until provider confirms.' : 'Instant confirmation on submit.'}</span>
+            <div className="text-xs text-ink-500 mt-2 leading-relaxed flex items-start gap-2 bg-ink-50 rounded-xl p-3 border border-ink-200">
+              <Sparkles size={13} className="mt-0.5 flex-shrink-0 text-accent-500" />
+              <span>{requiresPayment ? 'Advance payment required to confirm.' : service.manual_confirmation ? 'Reserved until the provider confirms.' : 'Instant confirmation on submit.'}</span>
             </div>
           </div>
         </aside>

@@ -33,7 +33,7 @@ export default function MobileBottomNav() {
               end={it.end}
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center gap-0.5 py-2 px-1 text-[10px] font-medium transition ${
-                  isActive ? 'text-brand-700' : 'text-ink-500 hover:text-ink-800'
+                  isActive ? 'text-ink-900' : 'text-ink-500 hover:text-ink-800'
                 }`
               }
             >
@@ -42,7 +42,7 @@ export default function MobileBottomNav() {
                   <div className={`relative h-6 w-6 grid place-items-center transition ${isActive ? 'scale-110' : ''}`}>
                     <it.icon size={20} strokeWidth={isActive ? 2.4 : 2} />
                     {isActive && (
-                      <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-brand-500" />
+                      <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent-500" />
                     )}
                   </div>
                   <span>{it.label}</span>

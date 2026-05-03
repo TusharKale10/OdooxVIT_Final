@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   Users, Briefcase, CalendarCheck, FileText, IndianRupee, Star, ShieldCheck,
-  TrendingUp, Search,
+  TrendingUp, Search, MessageSquare, RefreshCw,
 } from 'lucide-react';
 import { api } from '../api/client';
 
@@ -20,12 +20,30 @@ export default function AdminPanel() {
   const [filter, setFilter] = useState('');
   const [pendingId, setPendingId] = useState(null);
 
+  // Reviews / feedback feed
+  const [reviews, setReviews] = useState([]);
+  const [reviewsAgg, setReviewsAgg] = useState({ avg: 0, total: 0 });
+  const [reviewsSort, setReviewsSort] = useState('latest');
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  const loadReviews = async (sort = reviewsSort) => {
+    setReviewsLoading(true);
+    try {
+      const d = await api.get(`/admin/reviews?sort=${encodeURIComponent(sort)}&limit=100`);
+      setReviews(d.reviews || []);
+      setReviewsAgg({ avg: Number(d.avg_rating) || 0, total: Number(d.total) || 0 });
+    } catch (e) { setError(e.message); }
+    finally { setReviewsLoading(false); }
+  };
+
   const load = () => Promise.all([
     api.get('/admin/dashboard').then(setStats),
     api.get('/admin/users').then((d) => setUsers(d.users)),
+    loadReviews('latest'),
   ]).catch((e) => setError(e.message));
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { loadReviews(reviewsSort); /* eslint-disable-next-line */ }, [reviewsSort]);
 
   const setActive = async (id, val) => {
     setPendingId(id);
@@ -59,8 +77,9 @@ export default function AdminPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Admin dashboard</h1>
-        <p className="text-sm text-ink-500">System-level monitoring, analytics, and user management</p>
+        <span className="eyebrow">Admin</span>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink-900 mt-2 tracking-tightest">Dashboard</h1>
+        <p className="text-sm text-ink-500 mt-1.5">System-level monitoring, analytics, user management and feedback.</p>
       </div>
 
       {error && <div className="card border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm">{error}</div>}
@@ -74,7 +93,7 @@ export default function AdminPanel() {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat icon={FileText}     color="bg-rose-50 text-rose-700"     label="Services"            value={stats.total_services} onClick={() => nav('/organiser')} />
-        <Stat icon={Star}         color="bg-amber-50 text-amber-700"   label="Customer satisfaction" value={`${Number(stats.customer_satisfaction).toFixed(2)} ★`} sub={`${stats.rating_count} ratings`} onClick={scrollTo('section-analytics')} />
+        <Stat icon={Star}         color="bg-amber-50 text-amber-700"   label="Customer satisfaction" value={`${Number(stats.customer_satisfaction).toFixed(2)} ★`} sub={`${stats.rating_count} ratings`} onClick={scrollTo('section-feedback')} />
         <Stat icon={TrendingUp}   color="bg-emerald-50 text-emerald-700" label="Trend (14d)"        value={trendData.reduce((s, x) => s + x.Created, 0)} sub="Bookings created" onClick={scrollTo('section-bookings')} />
         <Stat icon={ShieldCheck}  color="bg-brand-50 text-brand-700"   label="Active customers"    value={stats.total_customers} onClick={scrollTo('section-users')} />
       </div>
@@ -168,6 +187,83 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      {/* Feedback feed — every review submitted across the platform */}
+      <div id="section-feedback" className="card p-5 scroll-mt-24">
+        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+          <div>
+            <h3 className="font-display font-semibold text-ink-900 tracking-crisp flex items-center gap-2">
+              <MessageSquare size={16} /> Customer feedback
+              {reviewsAgg.total > 0 && (
+                <span className="text-xs text-ink-500 font-normal">
+                  · {reviewsAgg.total} review{reviewsAgg.total !== 1 ? 's' : ''} · avg {reviewsAgg.avg.toFixed(2)} ★
+                </span>
+              )}
+            </h3>
+            <p className="text-xs text-ink-500 mt-1">Latest customer ratings and comments — linked to the booking that produced them.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select value={reviewsSort} onChange={(e) => setReviewsSort(e.target.value)}
+                    className="input !w-auto !py-1.5 !text-xs">
+              <option value="latest">Latest</option>
+              <option value="highest">Highest rated</option>
+            </select>
+            <button onClick={() => loadReviews()} className="btn-ghost !p-2" title="Refresh">
+              <RefreshCw size={14} className={reviewsLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {reviewsLoading && reviews.length === 0 && (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-16 shimmer-bg rounded-xl" />
+            ))}
+          </div>
+        )}
+        {!reviewsLoading && reviews.length === 0 && (
+          <div className="text-center py-10 text-sm text-ink-500">No feedback submitted yet.</div>
+        )}
+        {reviews.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-ink-500 uppercase tracking-wider">
+                <tr>
+                  <th className="text-left py-2.5 font-medium">When</th>
+                  <th className="text-left py-2.5 font-medium">Customer</th>
+                  <th className="text-left py-2.5 font-medium">Service</th>
+                  <th className="text-left py-2.5 font-medium">Rating</th>
+                  <th className="text-left py-2.5 font-medium">Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reviews.map((r) => (
+                  <tr key={r.id} className="border-t border-ink-200 align-top">
+                    <td className="py-3 text-xs text-ink-500 whitespace-nowrap">{new Date(r.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</td>
+                    <td className="py-3">
+                      <div className="font-medium text-ink-900">{r.customer_name}</div>
+                      <div className="text-xs text-ink-500">{r.customer_email}</div>
+                    </td>
+                    <td className="py-3">
+                      <a href={`/services/${r.service_id}`} className="text-brand-700 hover:underline">{r.service_name}</a>
+                      {r.booking_id && <div className="text-[11px] text-ink-400 mt-0.5">booking #{r.booking_id}</div>}
+                    </td>
+                    <td className="py-3 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-0.5">
+                        {[1,2,3,4,5].map((i) => (
+                          <Star key={i} size={13} className={i <= r.rating ? 'text-amber-500 fill-amber-500' : 'text-ink-200 fill-ink-100'} />
+                        ))}
+                        <span className="ml-1 text-xs text-ink-500">{r.rating}/5</span>
+                      </span>
+                    </td>
+                    <td className="py-3 text-ink-700 max-w-md">{r.comment || <span className="text-ink-400 italic">No comment</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Users table */}
       <div id="section-users" className="card p-5 scroll-mt-24">
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
@@ -185,7 +281,16 @@ export default function AdminPanel() {
             <tbody>
               {filtered.map((u) => (
                 <tr key={u.id} className="border-t border-ink-200">
-                  <td className="py-2 font-medium">{u.full_name}</td>
+                  <td className="py-2 font-medium">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full overflow-hidden bg-ink-900 text-white text-[10px] font-semibold flex items-center justify-center flex-shrink-0">
+                        {u.avatar_url
+                          ? <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />
+                          : (u.full_name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
+                      </div>
+                      <span>{u.full_name}</span>
+                    </div>
+                  </td>
                   <td className="py-2 text-ink-500">{u.email}</td>
                   <td className="py-2 text-ink-500">{u.city || '—'}</td>
                   <td className="py-2">

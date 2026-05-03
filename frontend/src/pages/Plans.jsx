@@ -39,10 +39,14 @@ export default function Plans() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="text-center mb-8">
-        <span className="pill-brand"><Sparkles size={12} /> Subscription</span>
-        <h1 className="text-3xl sm:text-4xl font-bold text-ink-900 mt-3">Choose the plan that fits you</h1>
-        <p className="text-ink-500 mt-2 max-w-xl mx-auto">Unlock priority booking, free reschedules, and faster credit accrual. Upgrade or cancel any time.</p>
+      <div className="text-center mb-12">
+        <span className="eyebrow inline-flex"><Sparkles size={11} className="text-accent-500" /> Subscription</span>
+        <h1 className="font-display text-4xl sm:text-5xl font-semibold text-ink-900 mt-3 tracking-tightest leading-tight">
+          Choose the plan that
+          <br />
+          <span className="font-serif italic font-medium text-accent-600">fits your routine.</span>
+        </h1>
+        <p className="text-ink-500 mt-4 max-w-xl mx-auto leading-relaxed">Unlock priority booking, free reschedules, and faster credit accrual. Upgrade or cancel any time.</p>
       </div>
 
       {error && <div className="card border-rose-200 bg-rose-50 text-rose-700 p-3 text-sm mb-4">{error}</div>}
@@ -58,17 +62,17 @@ export default function Plans() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className={`card p-6 flex flex-col relative ${featured ? 'ring-2 ring-brand-400 shadow-glow' : ''}`}>
+              className={`card p-7 flex flex-col relative ${featured ? 'ring-2 ring-ink-900 border-ink-900' : ''}`}>
               {featured && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill bg-brand-600 text-white shadow-soft">Most popular</span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill bg-accent-500 text-white shadow-soft">Most popular</span>
               )}
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: p.color }}>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: p.color }}>
                 <Icon size={22} />
               </div>
-              <h3 className="text-xl font-bold text-ink-900 mt-3">{p.name}</h3>
-              <div className="mt-2">
-                <span className="text-3xl font-bold text-ink-900">₹{Number(p.price_monthly).toFixed(0)}</span>
-                <span className="text-sm text-ink-500 ml-1">/ month</span>
+              <h3 className="font-display text-xl font-semibold text-ink-900 mt-4 tracking-crisp">{p.name}</h3>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="font-display text-4xl font-bold text-ink-900 tracking-tightest">₹{Number(p.price_monthly).toFixed(0)}</span>
+                <span className="text-sm text-ink-500">/ month</span>
               </div>
               <ul className="space-y-2 mt-5 flex-1">
                 {p.features.map((f) => (

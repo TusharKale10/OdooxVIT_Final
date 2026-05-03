@@ -16,26 +16,27 @@ export default function Credits() {
   if (!data) return <div className="p-12 text-center text-ink-500">Loading…</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink-900">Schedula credits</h1>
-        <p className="text-sm text-ink-500">Earn credits with every booking — redeem them on future services.</p>
+        <span className="eyebrow"><Coins size={11} className="text-accent-500" /> Wallet</span>
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink-900 mt-2 tracking-tightest">Schedula credits</h1>
+        <p className="text-sm text-ink-500 mt-1.5">Earn credits with every booking — redeem them on future services.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card p-5 col-span-1 md:col-span-2 bg-gradient-to-br from-brand-600 to-brand-800 text-white relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-12 -left-12 w-44 h-44 rounded-full bg-amber-400/20 blur-3xl" />
+        <div className="card p-7 col-span-1 md:col-span-2 bg-ink-900 text-white relative overflow-hidden">
+          <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-accent-500/30 blur-3xl" />
+          <div className="absolute -bottom-12 -left-12 w-44 h-44 rounded-full bg-brand-500/20 blur-3xl" />
           <div className="relative">
-            <div className="text-xs uppercase tracking-wide opacity-80 flex items-center gap-2"><Coins size={14} /> Available balance</div>
-            <div className="text-5xl font-bold mt-2">{data.balance.toLocaleString()}</div>
-            <div className="text-sm opacity-80 mt-1">1 credit = ₹1 off your next booking</div>
+            <div className="text-[10px] uppercase tracking-[0.16em] opacity-70 font-semibold flex items-center gap-2"><Coins size={12} /> Available balance</div>
+            <div className="font-display text-6xl font-bold mt-3 tracking-tightest">{data.balance.toLocaleString()}</div>
+            <div className="text-sm opacity-70 mt-2">1 credit = ₹1 off your next booking</div>
           </div>
         </div>
-        <div className="card p-5">
-          <div className="text-xs uppercase tracking-wide font-semibold text-ink-500 flex items-center gap-2"><Clock size={14} /> Expiring soon</div>
-          <div className="text-2xl font-bold text-ink-900 mt-1">{data.expiring_soon.toLocaleString()}</div>
-          <div className="text-xs text-ink-500 mt-1">Within next 30 days</div>
+        <div className="card p-6">
+          <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-ink-400 flex items-center gap-2"><Clock size={12} /> Expiring soon</div>
+          <div className="font-display text-3xl font-bold text-ink-900 mt-2 tracking-tightest">{data.expiring_soon.toLocaleString()}</div>
+          <div className="text-xs text-ink-500 mt-1.5">Within next 30 days</div>
         </div>
       </div>
 

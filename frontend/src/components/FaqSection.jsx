@@ -102,12 +102,14 @@ export default function FaqSection() {
 
       <div className="relative max-w-3xl mx-auto">
         <header className="text-center mb-10">
-          <span className="pill-brand inline-flex"><Sparkles size={12} /> Need help?</span>
-          <h2 id="faq-heading" className="text-3xl sm:text-4xl font-bold text-ink-900 mt-3 leading-tight tracking-tight">
-            Frequently asked questions
+          <span className="eyebrow inline-flex"><Sparkles size={11} className="text-accent-500" /> Need help?</span>
+          <h2 id="faq-heading" className="font-display text-3xl sm:text-5xl font-semibold text-ink-900 mt-3 leading-[1.04] tracking-tightest">
+            Frequently
+            <br />
+            <span className="font-serif italic font-medium text-accent-600">asked questions.</span>
           </h2>
-          <p className="text-ink-500 mt-2 max-w-xl mx-auto">
-            Quick answers about booking, payments, plans and more — can't find yours? Open the chat in the bottom-right corner.
+          <p className="text-ink-500 mt-4 max-w-xl mx-auto leading-relaxed">
+            Quick answers about booking, payments, plans and more. Can't find yours? Open the chat in the bottom-right corner.
           </p>
         </header>
 

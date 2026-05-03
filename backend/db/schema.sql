@@ -29,6 +29,7 @@ CREATE TABLE users (
   city            VARCHAR(80)  NULL,
   latitude        DECIMAL(10,7) NULL,
   longitude       DECIMAL(10,7) NULL,
+  avatar_url      VARCHAR(500) NULL,
   created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_users_role (role),
   INDEX idx_users_active (is_active)

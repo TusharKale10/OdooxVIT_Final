@@ -7,6 +7,7 @@ const { auth, optionalAuth, requireRole } = require('../middlewares/auth');
 router.get('/',                       ah(c.listPublic));
 router.get('/search',                 ah(c.search));
 router.get('/recommended', optionalAuth, ah(c.recommended));
+router.get('/reviews/mine', auth,     ah(c.myReviews));
 router.get('/share/:token',           ah(c.byShareToken));
 router.get('/:id',          optionalAuth, ah(c.getOne));
 router.get('/:id/slots',    optionalAuth, ah(c.getSlots));

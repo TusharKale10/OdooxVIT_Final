@@ -88,12 +88,18 @@ export default function Payment() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <button onClick={() => nav(-1)} className="btn-ghost mb-4"><ChevronLeft size={16} /> Back</button>
+      <button onClick={() => nav(-1)} className="btn-ghost mb-5"><ChevronLeft size={16} /> Back</button>
+
+      <div className="mb-6">
+        <span className="eyebrow">Checkout</span>
+        <h1 className="font-display text-2xl sm:text-3xl font-semibold text-ink-900 mt-2 tracking-crisp">Complete your payment</h1>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5">
-        <div className="card p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-ink-900">
-              <Lock size={18} /> <h1 className="text-xl font-bold">Choose payment method</h1>
+        <div className="card p-6 sm:p-7">
+          <div className="flex items-center justify-between gap-3 pb-5 border-b border-ink-200">
+            <div className="flex items-center gap-2.5 text-ink-900">
+              <Lock size={18} className="text-ink-500" /> <h2 className="font-display text-lg font-semibold tracking-crisp">Choose payment method</h2>
             </div>
             {config.is_mock
               ? <span className="pill-amber"><FlaskConical size={10} /> Test / Demo mode</span>
@@ -108,37 +114,37 @@ export default function Payment() {
           {info && <div className="card border-emerald-200 bg-emerald-50 text-emerald-700 p-3 mt-4 text-sm">{info}</div>}
 
           {/* Option 1 — Razorpay */}
-          <div className="card p-5 mt-5">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center"><CreditCard size={18} /></div>
+          <div className="rounded-2xl border border-ink-200 bg-white p-5 mt-5 hover:border-ink-400 transition">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-ink-900 text-white flex items-center justify-center flex-shrink-0"><CreditCard size={18} /></div>
               <div className="flex-1">
-                <div className="font-semibold text-ink-900">Razorpay Checkout</div>
-                <p className="text-sm text-ink-500 mt-0.5">
-                  Card · UPI · Net Banking · Wallets — through Razorpay's secure checkout.
+                <div className="font-display font-semibold text-ink-900 tracking-crisp">Razorpay Checkout</div>
+                <p className="text-sm text-ink-500 mt-1 leading-relaxed">
+                  Card · UPI · Net Banking · Wallets — handled through Razorpay's secure checkout.
                 </p>
               </div>
             </div>
-            <button className="btn-primary w-full !py-3 mt-4" disabled={busy} onClick={payRazorpay}>
+            <button className="btn-primary w-full !py-3 mt-5" disabled={busy} onClick={payRazorpay}>
               {busy ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
               {busy ? 'Processing…' : `Pay ₹${Number(b.total_amount).toFixed(2)} with Razorpay`}
             </button>
           </div>
 
           {/* Option 2 — UPI QR (always available, perfect for live demos) */}
-          <div className="card p-5 mt-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center"><QrCode size={18} /></div>
+          <div className="rounded-2xl border border-ink-200 bg-white p-5 mt-4 hover:border-ink-400 transition">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-accent-500 text-white flex items-center justify-center flex-shrink-0"><QrCode size={18} /></div>
               <div className="flex-1">
-                <div className="font-semibold text-ink-900 flex items-center gap-2">
+                <div className="font-display font-semibold text-ink-900 flex items-center gap-2 tracking-crisp">
                   Scan UPI QR
                   <span className="pill-slate">Demo</span>
                 </div>
-                <p className="text-sm text-ink-500 mt-0.5">
+                <p className="text-sm text-ink-500 mt-1 leading-relaxed">
                   Open a phone-scannable QR code. Works with any UPI app — Google Pay, PhonePe, Paytm, BHIM.
                 </p>
               </div>
             </div>
-            <button className="btn-outline w-full !py-3 mt-4" onClick={() => setQrOpen(true)}>
+            <button className="btn-outline w-full !py-3 mt-5" onClick={() => setQrOpen(true)}>
               <Smartphone size={16} /> Show UPI QR for ₹{Number(b.total_amount).toFixed(2)}
             </button>
           </div>
@@ -158,23 +164,24 @@ export default function Payment() {
           </p>
         </div>
 
-        <aside className="card p-5 lg:sticky lg:top-24 self-start">
-          <h3 className="font-bold mb-4">Order summary</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-ink-500">Service</span><span className="font-medium text-right">{b.service_name}</span></div>
-            <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span>₹{Number(b.subtotal_amount || b.total_amount).toFixed(2)}</span></div>
+        <aside className="card p-6 lg:sticky lg:top-24 self-start">
+          <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-ink-400 mb-3">Order summary</div>
+          <div className="font-display font-semibold text-ink-900 text-base leading-snug tracking-crisp pb-3 border-b border-ink-200">{b.service_name}</div>
+          <div className="space-y-2.5 text-sm pt-4">
+            <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span className="font-medium">₹{Number(b.subtotal_amount || b.total_amount).toFixed(2)}</span></div>
             {Number(b.discount_amount) > 0 && (
-              <div className="flex justify-between text-emerald-700"><span>Discount</span><span>−₹{Number(b.discount_amount).toFixed(2)}</span></div>
+              <div className="flex justify-between text-sage-700"><span>Discount</span><span>−₹{Number(b.discount_amount).toFixed(2)}</span></div>
             )}
             {Number(b.tax_amount) > 0 && (
-              <div className="flex justify-between"><span className="text-ink-500">GST</span><span>₹{Number(b.tax_amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-ink-500">GST</span><span className="font-medium">₹{Number(b.tax_amount).toFixed(2)}</span></div>
             )}
             {Number(b.credits_used) > 0 && (
-              <div className="flex justify-between text-amber-700"><span>Credits</span><span>−₹{Number(b.credits_used).toFixed(2)}</span></div>
+              <div className="flex justify-between text-accent-700"><span>Credits</span><span>−₹{Number(b.credits_used).toFixed(2)}</span></div>
             )}
-            <div className="flex justify-between text-ink-500"><span>Status</span><span className="pill-amber">Awaiting payment</span></div>
-            <div className="border-t border-ink-200 pt-3 flex justify-between font-bold text-ink-900">
-              <span>Total</span><span className="text-lg">₹{Number(b.total_amount).toFixed(2)}</span>
+            <div className="flex justify-between items-center pt-1"><span className="text-ink-500">Status</span><span className="pill-amber">Awaiting payment</span></div>
+            <div className="border-t border-ink-200 pt-3 flex justify-between items-end">
+              <span className="font-display font-semibold text-ink-900">Total</span>
+              <span className="font-display text-2xl font-bold text-ink-900 tracking-tightest">₹{Number(b.total_amount).toFixed(2)}</span>
             </div>
           </div>
         </aside>
