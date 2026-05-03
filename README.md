@@ -1,175 +1,172 @@
 # Schedula
 
-**Booking trusted services shouldn't take five emails and a phone call.**
-Schedula is an appointment-booking platform we built for the **VIT × Odoo Hackathon 2026** — a single place to discover providers, see real availability, and lock in a slot in under a minute. Healthcare, sports, counseling, events, mock interviews, virtual sessions — all running on the same flow.
+**Booking a service shouldn't take five emails and a phone call.**
 
-It is *not* yet another calendar widget glued to a payment button. It's a full SaaS-style product: customers, organisers, and admins each get their own surface; bookings are race-safe under load; payments verify on the server with HMAC; credits, discounts, subscriptions and locations all compose into the price you actually pay.
+Schedula is a simple appointment booking app built for the **Odoo x VIT Hackathon 2026**. You can use it to find a service, see open time slots, and book in under a minute. It works for doctors, gyms, therapy, events, mock interviews, and online sessions — all in one app.
+
+It's not just a calendar with a pay button. Customers, organisers, and admins each get their own pages. Bookings are safe even when many people book at the same time. Payments are checked on the server. Discounts, credits, and plans all add up correctly to the final price.
 
 ---
 
 ## Watch it before you read it
 
-Two short videos — these are the fastest way to see what we built:
+Two short videos. These are the fastest way to see what we built.
 
 > ### 📺 Demo / solution walkthrough
 > **<https://drive.google.com/file/d/1t904ag11pgaV6CiDPxbMl0djOYP5WqXm/view?usp=drive_link>**
 >
-> A guided run-through of the booking flow end-to-end: discovering a service, picking a slot, paying, confirming, and reviewing.
+> A quick walk through the booking flow: pick a service, pick a slot, pay, confirm, and review.
 
 > ### 📺 Schedula platform walkthrough
 > **<https://drive.google.com/file/d/16iv33VRchUstvMA7w2nEdvjQM2TFTmdE/view?usp=sharing>**
 >
-> The wider platform tour — customer dashboard, organiser console, admin analytics, feedback feed, and the multi-tier subscription system.
-
-If you only have two minutes, watch the first one. If you have five, watch both.
+> The full app tour — customer dashboard, organiser side, admin dashboard, feedback page, and the plan system.
 
 ---
 
-## Why we built it the way we did
+## Why we built it this way
 
-Every appointment platform we used as students did one of two things badly:
+Most booking apps we tried as students did one of two things badly:
 
-1. **It lied about availability.** Slots showed open, then a human had to "confirm" them later by email.
-2. **It buried the friction.** Fees showed up after you'd already entered a phone number; reschedules required calling.
+1. **They lied about open slots.** Slots looked free, then someone had to "confirm" them by email later.
+2. **They hid the cost.** Fees showed up only after you typed your phone number. Rescheduling needed a phone call.
 
-So we kept three rules in mind while building Schedula:
+So we set three simple rules for Schedula:
 
-- **What you see is what's bookable.** The grid only renders slots you can actually take. Booked slots aren't greyed out — they're hidden. The colour you see is the truth: 🟢 available, ⚫ selected, 🟡 premium-only.
-- **Money is honest from step one.** Subtotal, GST, discount, credits and total are visible the moment you reach Details. No surprises on the payment screen.
-- **Everything is reversible.** Cancel returns credits. Reschedule re-validates availability under a database lock. Reviews and profile pictures are editable. Bookings have an audit trail.
-
-Those rules drove most of the architectural choices below.
+- **What you see is what you can book.** The grid only shows slots you can actually take. Booked slots are hidden, not greyed out. Colours are honest: 🟢 free, ⚫ picked, 🟡 only for premium plans.
+- **The price is honest from the start.** Subtotal, tax, discount, credits, and total are all visible at the Details step. No surprises later.
+- **You can change your mind.** Cancel a booking and credits come back. Reschedule and the new slot is checked again. You can edit your profile, photo, and reviews any time.
 
 ---
 
 ## What's inside
 
-### Three roles, three experiences
+### Three types of users
 
-| Role | What they do |
+| User | What they do |
 |---|---|
-| **Customer** | Discover services, book in 7 steps, pay, reschedule, cancel, leave reviews, manage credits & subscription, save favourites |
-| **Organiser** | Create services, set weekly schedules or flexible windows, configure capacity / buffer / advance-payment rules, see calendar of bookings, manage virtual meeting links |
-| **Admin** | System-wide analytics (14-day booking trends, peak hours, category mix, provider utilisation), user management, customer feedback feed |
+| **Customer** | Find services, book in 7 steps, pay, reschedule, cancel, leave reviews, manage credits and plan, save favourites |
+| **Organiser** | Add services, set weekly hours or flexible windows, set capacity and rules, see their booking calendar, manage video meeting links |
+| **Admin** | See platform stats (14-day trends, peak hours, top categories, top providers), manage users, read all customer feedback |
 
-### The booking flow (the heart of the app)
+### The booking flow
 
 ```
 Service → Provider → Date → Slot → Details → Payment → Confirmation
 ```
 
-- Slots are computed from `weekly_schedules` (recurring) **or** `availability_slots` (flexible windows) — never both at once
-- Every slot calculation runs through `slotService.js` and respects **buffer time**, **capacity**, **calendar notes** (admin can mark a date "blocked"), and the user's **subscription tier** (Silver members can book within 14 days, Gold within 30, Platinum unlimited)
-- Slot creation is **race-safe**: the booking insert sits inside a MySQL transaction with `SELECT … FOR UPDATE` on the resource and the slot row, so two customers tapping the same time at the same instant cannot both win
-- Reschedules go through the *same* lock. Cancellation refunds credits used on the booking automatically.
+- Slots come from a weekly schedule (the same hours every week) or flexible windows (specific dates) — never both at once
+- Slots respect the buffer time, group capacity, blocked dates, and the user's plan (Silver: book within 14 days, Gold: 30 days, Platinum: any time)
+- When you book, the database locks the slot row so two people can't grab the same time at the same moment
+- Reschedules use the same lock. Cancellation puts your credits back automatically.
 
-### Pricing engine (everything composes correctly)
+### Pricing (every part is clear)
 
-- **Discount codes** — percentage or flat, with min-order, expiry, total / per-user usage caps
-- **Threshold-based GST** — only applies once subtotal exceeds the service's `tax_threshold`
-- **Schedula credits** — 1 credit = ₹1; you earn 5% on every paid booking (2× as Gold, 5× as Platinum); capped at 50% of the order; expire 90 days from issue
-- **Subscriptions** — Silver (free), Gold (₹299/mo), Platinum (₹799/mo); unlock priority slots, longer booking horizons, free reschedules and reward multipliers
+- **Discount codes** — percent off or flat amount. Can have a minimum order, an expiry date, and a usage limit.
+- **GST** — only added when the subtotal goes above a set amount for the service
+- **Schedula credits** — 1 credit = ₹1. You earn 5% on every paid booking (2x if you're Gold, 5x if Platinum). You can use credits for up to half the order. They expire after 90 days.
+- **Plans** — Silver (free), Gold (₹299/month), Platinum (₹799/month). Plans give priority slots, a longer booking window, free reschedules, and bigger credit rewards.
 
-The four stack in a deterministic order: `subtotal → minus discount → plus tax → minus credits = total`. No mystery in the math.
+The math is fixed: `subtotal − discount + tax − credits = total`. Same every time.
 
-### Payments (mock by default, live with one env edit)
+### Payments
 
-- Out of the box, the app runs in **demo mode** — full booking flow, no real charge, marked clearly with a yellow pill
-- Drop `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` into `backend/.env`, restart, and the same flow now goes through live Razorpay checkout (Card · UPI · Net Banking · Wallets)
-- Verification is HMAC-SHA256 on the server. A booking is **never** marked paid unless the signature checks out. Full setup walkthrough lives in [`RAZORPAY_SETUP.md`](./RAZORPAY_SETUP.md).
-- A separate UPI QR path is always available for live demos — scan with any UPI app, the backend records the reference, and the booking flips to confirmed.
+- Out of the box, the app runs in **demo mode**. The full flow works, but no real money moves. The screen shows a yellow "Demo" pill.
+- To go live, just put `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `backend/.env` and restart. The same flow now uses real Razorpay checkout (Card, UPI, Net Banking, Wallets).
+- The server checks every payment with a secure signature. A booking is **never** marked paid unless this check passes. Full setup steps are in [`RAZORPAY_SETUP.md`](./RAZORPAY_SETUP.md).
+- A UPI QR option is always there too — scan with any UPI app and the booking gets confirmed.
 
-### Feedback that actually shows up
+### Feedback you can actually see
 
-Reviews on Schedula aren't write-only. Once you submit one:
+When you submit a review:
 
-- It appears in **your profile** under "My feedback" — sortable by latest or highest rated, with a link back to the service and the booking
-- It appears in the **admin feedback feed** — every review across the platform, with star rating, customer info, comment, and source booking. Admin can sort latest / highest rated.
-- It bumps the **service's aggregate star rating** (auto-recomputed from `AVG(rating)` on every submit)
+- It shows up in **your profile** under "My feedback". You can sort by latest or highest rating, and click through to the service or booking.
+- It shows up in the **admin feedback page** — every review on the platform, with stars, customer name, comment, and the booking it came from. Admins can sort it too.
+- It updates the **service's average star rating** right away.
 
-The user-facing review form is in `BookingConfirmed.jsx` — once your booking status is `completed`, a "Leave review" button appears.
+The review form lives on the booking confirmation page. Once your booking is marked completed, a "Leave review" button appears.
 
-### Profiles you can actually customise
+### Profiles you can edit
 
-- Editable full name, phone (with OTP verification), avatar
-- **Profile picture upload** — click the avatar tile, pick an image (≤ 4 MB, PNG/JPG/WebP/GIF/SVG). Stored as a `MEDIUMBLOB` row in `uploaded_images` (no writable filesystem needed for deployment) and served via `/uploads/<filename>`.
-- Sections for upcoming bookings, past bookings, submitted feedback, and credits balance — all live, all refresh on focus
+- Edit your name, phone (with OTP check), and photo
+- **Profile photo upload** — click your avatar, pick an image (under 4 MB, common image formats). The image is saved in the database, so no extra file storage is needed.
+- Sections for upcoming bookings, past bookings, your feedback, and credits balance — all update live
 
 ### Service catalogue
 
-- Six top-level categories: Healthcare · Sports · Counseling · Events · Interviews · Services
-- Filter by category, free-text search, country / state / city, appointment type, max price
-- "Near me" geolocation snaps state/city using the closest seeded city
-- Personalized recommendations — top-rated near the user's stored city, falling back to platform-wide
+- Six categories: Healthcare, Sports, Counseling, Events, Interviews, Services
+- Filter by category, search text, country / state / city, type (in-person or online), and max price
+- "Near me" uses your location to pick the closest city
+- Personal recommendations — top-rated near your city, or top-rated overall
 
 ### Appointment types
 
-- **In-person** — service has a venue + city
-- **Virtual** — auto-generated meeting link per booking (Jitsi by default, also supports the organiser's Meet/Zoom URL). Customers see a "Join virtual meeting" button that becomes active 5 minutes before the start.
+- **In-person** — has a venue and city
+- **Online** — gets its own meeting link (Jitsi by default; works with the organiser's Meet/Zoom link too). The "Join meeting" button turns on 5 minutes before the start time.
 
-### Auth (defensive by default)
+### Sign-in (safe by default)
 
-- Email + password with 6-digit OTP email verification
-- Phone OTP for SMS reminders (logged server-side in demo mode)
-- Forgot-password / reset via signed email token
-- Generic responses for forgot/email-lookup paths so attackers can't enumerate accounts
-- JWT session with bcrypt-hashed passwords
+- Email + password with a 6-digit code sent by email
+- Phone OTP for SMS reminders (logged on the server in demo mode)
+- "Forgot password" reset via a one-time email link
+- Forgot-password and similar pages always say the same thing, so no one can guess if an email exists
+- JWT for sessions, bcrypt for passwords
 
-### UX & UI (the recent overhaul)
+### UI (recently redesigned)
 
-- Editorial design system — Plus Jakarta Sans display, Fraunces serif italic accents, Inter body
-- Warm cream canvas (`ink-50` is `#faf9f5`), refined indigo `brand`, warm coral `accent`, sage `success` palettes
-- Mobbin-inspired clean cards (image-on-top, white panel below, subtle borders, no heavy gradient overlays) and SimplyBook-inspired booking flow polish (progress strip, sage-tinted slot grid)
-- Framer Motion route transitions, marquee for recommended services, animated FAQ accordion
-- Recharts admin dashboard — area chart for 14-day trends, bar chart for peak hours, pie chart for category mix
-- Multi-language switcher — English · हिन्दी · मराठी
-- AI chatbot widget (bottom-right on every authenticated page)
-- Mobile bottom-nav, collapsible sidebar, paper-grade backdrop-blur topbar
+- Clean modern look — Plus Jakarta Sans for headings, Fraunces italic for accents, Inter for the body
+- Warm cream background, refined indigo brand colour, warm coral for highlights, sage green for success
+- Cards with image on top and white panel below — inspired by Mobbin. Booking flow polish — inspired by SimplyBook.
+- Smooth page transitions, scrolling carousel for recommended services, animated FAQ
+- Admin dashboard with simple charts (area, bar, pie)
+- Three languages — English, Hindi, Marathi
+- AI chat bubble on every signed-in page
+- Mobile bottom navigation, sidebar, blurred top bar
 
 ### Notifications
 
-- In-app bell with unread badge, polled every 30 s, dismissible per-item
-- Email on every state transition (booking created · rescheduled · cancelled · paid)
+- Bell icon with unread count, refreshed every 30 seconds, dismissable
+- Email when a booking is created, rescheduled, cancelled, or paid
 
 ### Locations
 
-- India-wide Country → State → District → City tree (seeded)
-- `GET /api/locations/nearest?lat=&lng=` returns the closest seeded city by haversine
+- Full Country → State → District → City data for India
+- "Nearest city" lookup using your latitude and longitude
 
 ---
 
-## Tech stack
+## Tech used
 
 **Frontend**
-React 18 · Vite · React Router v6 · Tailwind CSS 3 · Framer Motion · Recharts · Lucide icons · canvas-confetti · qrcode.react
+React 18, Vite, React Router, Tailwind CSS, Framer Motion, Recharts, Lucide icons
 
 **Backend**
-Node.js · Express · MySQL 8 (InnoDB, transactional) · mysql2 · bcryptjs · jsonwebtoken · multer · nodemailer · razorpay · uuid
+Node.js, Express, MySQL 8, mysql2, bcryptjs, jsonwebtoken, multer, nodemailer, razorpay
 
 **Database**
-MySQL 8 — explicit schema with foreign keys, named indexes, and a forward-compatible migrations folder
+MySQL 8 with foreign keys, named indexes, and a migrations folder
 
 ---
 
 ## Setup
 
-You'll need: **Node 18+**, **MySQL 8** running locally, and a terminal.
+You'll need: **Node 18+**, **MySQL 8** running on your machine, and a terminal.
 
 ### 1. MySQL
 
-Install MySQL 8 (defaults: `root`, no password). The init script creates the `appointment_app` database and seeds it with realistic demo data.
+Install MySQL 8 (default user: `root`, no password). The setup script will create the `appointment_app` database and add demo data.
 
 ### 2. Backend
 
 ```bash
 cd backend
-cp .env.example .env       # adjust DB credentials if your MySQL isn't password-less root
+cp .env.example .env       # change DB details if needed
 npm install
 npm run db:init            # runs schema.sql + seed.sql
 npm run dev                # http://localhost:4000
 ```
 
-If you already have the DB and just want to apply the latest migration (e.g., the `avatar_url` column added recently):
+If your DB already exists and you just want to apply the latest change (the `avatar_url` column we added):
 
 ```bash
 mysql appointment_app < db/migrations/001_add_avatar_url.sql
@@ -183,69 +180,61 @@ npm install
 npm run dev                # http://localhost:5173
 ```
 
-Vite proxies `/api/*` to `http://localhost:4000`, so the two run side-by-side without CORS gymnastics.
+The frontend sends `/api/*` calls to the backend at port 4000. No CORS setup needed.
 
-### Seed accounts
+### Demo accounts
 
-All passwords are `password123`.
+Password for all of them: `password123`.
 
 | Email | Role | Notes |
 |---|---|---|
-| `admin@app.com` | admin | full system access |
-| `organiser@app.com` | organiser | owns Dental Care, Yoga, Hair & Beauty |
+| `admin@app.com` | admin | full access |
+| `organiser@app.com` | organiser | owns Dental, Yoga, Hair & Beauty |
 | `watson@app.com` | organiser | owns Therapy, Mock Interview |
 | `maria@app.com` | organiser | owns Personal Training, Photo Studio |
-| `customer@app.com` | customer | Gold subscription, 700 credits |
-| `akash@app.com` | customer | 100 credits, no subscription |
+| `customer@app.com` | customer | Gold plan, 700 credits |
+| `akash@app.com` | customer | 100 credits, no plan |
 
 ---
 
-## Project layout
+## Folder structure
 
 ```
 backend/
   db/
-    schema.sql              # extended MySQL schema (categories, plans, credits, …)
-    seed.sql                # demo users, services, bookings, reviews
+    schema.sql              # full database schema
+    seed.sql                # demo data
     migrations/
       001_add_avatar_url.sql
   scripts/
-    seedLarge.js            # 200+ services for stress-testing UI
+    seedLarge.js            # adds 200+ services for testing
     trimServices.js
     fixMeetingLinks.js
   src/
     config/db.js
-    controllers/            # auth · services · bookings · payment · admin
-                            # categories · locations · subscriptions · credits
-                            # discounts · notifications · chat · upload · saved
-    services/               # slotService · bookingService · reminderService
-                            # mailer · emailTemplates       (race-safe core)
-    middlewares/            # auth · error · multer (upload)
-    routes/                 # one router per resource
-    utils/                  # asyncHandler · initDb · jwt
+    controllers/            # auth, services, bookings, payment, admin,
+                            # categories, locations, subscriptions, credits,
+                            # discounts, notifications, chat, upload, saved
+    services/               # slot logic, booking logic, reminders, mailer
+    middlewares/            # auth, error handling, file upload
+    routes/                 # one file per resource
+    utils/
     server.js
 
 frontend/
   src/
-    api/client.js           # tiny fetch wrapper (auth header, JSON, multipart)
-    components/             # Layout · Calendar · ServiceCard · ChatbotWidget
-                            # AuthShell · PasswordInput · ImageUploader
-                            # SearchAutocomplete · MobileBottomNav
-                            # FaqSection · UpcomingMeetingBanner
-                            # JoinMeetingButton · UpiQrModal · Toast · Field
+    api/client.js           # small fetch wrapper
+    components/             # Layout, Calendar, ServiceCard, ChatbotWidget,
+                            # AuthShell, ImageUploader, SearchAutocomplete,
+                            # MobileBottomNav, FaqSection, Toast, Field, etc.
     context/AuthContext.jsx
     data/categories.js
-    pages/                  # Login / Register / VerifyOtp / Forgot / Reset
-                            # Dashboard / SearchPage / ServicesPage / ServiceDetail
-                            # BookingFlow / Payment / BookingConfirmed / Reschedule
-                            # Profile / Plans / Credits / Saved
-                            # OrganiserPanel / OrganiserService / OrganiserNew
-                            # OrganiserMeetings / AdminPanel
-    styles/
-      category.css          # category-card hover/animation primitives
-    utils/                  # format · validators · razorpay · serviceVisuals
+    pages/                  # Login, Register, Dashboard, BookingFlow, Payment,
+                            # Profile, Plans, Saved, Admin, Organiser, etc.
+    styles/category.css
+    utils/                  # format, validators, razorpay helper
     styles.css              # Tailwind base + design tokens
-    App.jsx · main.jsx
+    App.jsx, main.jsx
   tailwind.config.js
   postcss.config.js
   index.html
@@ -253,46 +242,49 @@ frontend/
 
 ---
 
-## API surface (selected)
+## Main API routes
 
 ### Auth (`/api/auth`)
-`POST /register` · `POST /verify-otp` · `POST /resend-otp` · `POST /login`
-`POST /forgot` · `POST /reset` · `GET /me` · `PUT /me` (now accepts `avatar_url`)
-`POST /phone/send-otp` · `POST /phone/verify-otp`
+`POST /register`, `POST /verify-otp`, `POST /resend-otp`, `POST /login`
+`POST /forgot`, `POST /reset`, `GET /me`, `PUT /me` (now accepts `avatar_url`)
+`POST /phone/send-otp`, `POST /phone/verify-otp`
 
 ### Services (`/api/services`)
-`GET /` (filters: `category`, `q`, `city`, `state`, `country`, `appointment_type`, `max_price`) · `GET /search` · `GET /recommended`
-`GET /reviews/mine?sort=latest|highest` *(new — current user's submitted reviews)*
-`GET /:id` (resources, questions, weekly, flex, reviews, calendar_notes) · `GET /:id/slots?date=&resource_id=` · `GET /share/:token` · `POST /:id/review`
+`GET /` (with filters), `GET /search`, `GET /recommended`
+`GET /reviews/mine?sort=latest|highest` *(new — your own reviews)*
+`GET /:id`, `GET /:id/slots?date=&resource_id=`, `GET /share/:token`, `POST /:id/review`
 
-**Organiser-only:** `GET /mine/list` · `POST /` · `PUT /:id` · `DELETE /:id` · `PUT /:id/publish`
-`POST /:id/resources` · `DELETE /:id/resources/:rid` · `PUT /:id/weekly` · `PUT /:id/flexible`
-`PUT /:id/questions` · `PUT /:id/calendar-notes` · `GET /:id/calendar` · `GET /:id/bookings`
+**For organisers:** `GET /mine/list`, `POST /`, `PUT /:id`, `DELETE /:id`, `PUT /:id/publish`,
+`POST /:id/resources`, `DELETE /:id/resources/:rid`, `PUT /:id/weekly`, `PUT /:id/flexible`,
+`PUT /:id/questions`, `PUT /:id/calendar-notes`, `GET /:id/calendar`, `GET /:id/bookings`
 
 ### Bookings (`/api/bookings`)
-`GET /mine` · `GET /:id` · `POST /` (accepts `discount_code`, `credits_to_use`, `purpose`, `booked_for_*`) · `POST /:id/reschedule` · `POST /:id/cancel` · `POST /:id/confirm` (organiser)
+`GET /mine`, `GET /:id`, `POST /` (with discount, credits, purpose),
+`POST /:id/reschedule`, `POST /:id/cancel`, `POST /:id/confirm` (organiser)
 
 ### Payment (`/api/payment`)
-`GET /config` · `POST /create-order` · `POST /verify` · `POST /fail` · `POST /upi-confirm`
+`GET /config`, `POST /create-order`, `POST /verify`, `POST /fail`, `POST /upi-confirm`
 
-### Subscriptions / Credits / Discounts
-`GET /api/subscriptions/plans` · `GET /api/subscriptions/mine` · `POST /api/subscriptions/subscribe` · `POST /api/subscriptions/cancel`
-`GET /api/credits/me` · `POST /api/credits/grant` (admin)
-`GET /api/discounts` · `POST /api/discounts/validate`
+### Plans / Credits / Discounts
+`GET /api/subscriptions/plans`, `GET /api/subscriptions/mine`,
+`POST /api/subscriptions/subscribe`, `POST /api/subscriptions/cancel`
+`GET /api/credits/me`, `POST /api/credits/grant` (admin)
+`GET /api/discounts`, `POST /api/discounts/validate`
 
 ### Categories / Locations / Saved
 `GET /api/categories`
-`GET /api/locations` (full tree) · `GET /api/locations/search?q=` · `GET /api/locations/nearest?lat=&lng=`
-`GET /api/saved` · `GET /api/saved/ids` · `POST /api/saved/:serviceId` · `DELETE /api/saved/:serviceId`
+`GET /api/locations`, `GET /api/locations/search?q=`, `GET /api/locations/nearest?lat=&lng=`
+`GET /api/saved`, `GET /api/saved/ids`, `POST /api/saved/:serviceId`, `DELETE /api/saved/:serviceId`
 
 ### Notifications / Chat / Uploads
-`GET /api/notifications` · `PUT /api/notifications/:id/read` · `PUT /api/notifications/read-all` · `DELETE /api/notifications` · `DELETE /api/notifications/:id`
-`GET /api/chat/history` · `POST /api/chat/send`
-`POST /api/uploads` (multipart, ≤ 4 MB images) · `GET /uploads/:filename`
+`GET /api/notifications`, `PUT /api/notifications/:id/read`, `PUT /api/notifications/read-all`,
+`DELETE /api/notifications`, `DELETE /api/notifications/:id`
+`GET /api/chat/history`, `POST /api/chat/send`
+`POST /api/uploads` (image, ≤ 4 MB), `GET /uploads/:filename`
 
 ### Admin (`/api/admin`)
-`GET /dashboard` (stats + 14-day trend + peak hours + category pie + provider utilisation)
-`GET /users` · `PUT /users/:id/active` · `PUT /users/:id/role`
+`GET /dashboard` (stats, 14-day trend, peak hours, category pie, top providers)
+`GET /users`, `PUT /users/:id/active`, `PUT /users/:id/role`
 `GET /reviews?sort=latest|highest&service_id=&limit=` *(new — full feedback feed)*
 `GET /reports`
 
@@ -300,25 +292,25 @@ frontend/
 
 ## Things we're proud of
 
-- **Race-safety isn't a footnote.** `bookingService.js` runs every booking under a transaction with row-level locks. Two users hitting "Confirm" on the same slot at the same millisecond will see exactly one win and exactly one error — never two confirmed bookings for the same chair at the same time.
-- **The slot grid tells the truth.** A slot is rendered if and only if it's bookable now (or unlockable via subscription upgrade). Booked, blocked, beyond-horizon — all hidden, never just greyed out. The colour legend (Available / Selected / Premium-only) is built into the UI.
-- **Payments fail safe.** Even in demo mode the path through `payment/create-order → checkout → payment/verify` is identical to live. The HMAC verification is the *only* path that flips a booking to paid. Cancelled modals call `payment/fail` so orphaned pending rows are cleaned up.
-- **Feedback is end-to-end.** A customer leaves a review on `BookingConfirmed`; it shows up immediately in their profile, in the admin feedback feed, and in the service's aggregate rating. Admins can sort by latest or highest rated.
-- **Multi-language without the bloat.** EN / HI / MR are toggled from a single context, with translation keys grouped by surface. No i18n library — just a tiny `useTranslation()` hook.
-- **The design system pays for itself.** Custom Tailwind tokens (`ink`, `brand`, `accent`, `sage`), reusable component classes (`.card`, `.btn-primary`, `.eyebrow`, `.section-title`), Plus Jakarta + Fraunces for editorial type. Every page uses the same 8 primitives — the result feels intentional rather than slapped together.
+- **No double-bookings.** Every booking happens inside a database lock. Two people tapping the same slot at the same moment will see one win and one error — never two confirmed bookings for the same time.
+- **Honest slot grid.** A slot shows up only if you can book it now, or unlock it with a plan upgrade. Booked, blocked, or out-of-window slots are hidden — not greyed out. The colour legend is right there in the UI.
+- **Safe payments.** Even in demo mode, the steps are the same as live (`create-order → checkout → verify`). The signature check is the only way a booking gets marked paid. Cancelled payments call `payment/fail` so we don't leave junk rows behind.
+- **Feedback that actually shows up.** A review you leave on the confirmation page appears in your profile, in the admin feedback page, and updates the service's stars — all in real time.
+- **Three languages, no extra library.** English, Hindi, and Marathi switch from one place. We wrote a small `useTranslation()` hook instead of pulling in a big i18n package.
+- **Design system that pays off.** Custom Tailwind tokens (`ink`, `brand`, `accent`, `sage`), reusable classes (`.card`, `.btn-primary`, `.eyebrow`, `.section-title`), Plus Jakarta + Fraunces fonts. Every page uses the same set of building blocks, so nothing feels random.
 
 ---
 
-## What's next (if we keep going)
+## What we'd add next
 
-- A reminder pipeline that actually sends SMS (currently logged-only)
-- Calendar sync (.ics export → push to Google Calendar / Apple Calendar)
-- Provider-side messaging (extend the existing chat to be 1-to-1 instead of just bot)
-- Per-service availability heatmap on the organiser console
-- A second tax model (per-line items rather than threshold-based) for hybrid services
+- A real reminder pipeline (right now SMS is logged, not sent)
+- Calendar export — push bookings to Google Calendar / Apple Calendar
+- One-to-one messaging between customer and organiser
+- Heatmap of availability on the organiser dashboard
+- A second tax mode (per-line item) for services that mix taxable and non-taxable parts
 
 ---
 
-## Built with care for the VIT × Odoo Hackathon 2026
+## Built with care for the Odoo x VIT Hackathon 2026
 
-Made by a team that genuinely got tired of phone-confirming dentist appointments. If you find a bug, treat it as feedback — open the in-app chat, drop a review, or just push a fix.
+Made by a team that got tired of phone-confirming dentist appointments. If you find a bug, treat it as feedback — open the chat, leave a review, or send a fix.
