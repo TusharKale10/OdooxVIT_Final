@@ -25,8 +25,7 @@ const bcrypt = require('bcryptjs');
   // Re-hash the demo password to guarantee it matches "password123"
   const dbName = process.env.DB_NAME || 'appointment_app';
   const hash = await bcrypt.hash('password123', 10);
-  await conn.query(`UPDATE \`${dbName}\`.users SET password_hash=? WHERE email IN
-    ('admin@app.com','organiser@app.com','customer@app.com','watson@app.com')`, [hash]);
+  await conn.query(`UPDATE \`${dbName}\`.users SET password_hash=?`, [hash]);
 
   console.log('Database ready. Demo password for all seed users: "password123"');
   await conn.end();
