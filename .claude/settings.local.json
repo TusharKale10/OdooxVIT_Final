@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm run *)",
-      "Bash(npm --prefix \"C:/Users/sandesh/Desktop/odooxVIT-final/frontend\" run build)",
-      "Bash(node -e \"require\\('C:/Users/sandesh/Desktop/odooxVIT-final/backend/src/controllers/authController'\\); require\\('C:/Users/sandesh/Desktop/odooxVIT-final/backend/src/controllers/serviceController'\\); require\\('C:/Users/sandesh/Desktop/odooxVIT-final/backend/src/controllers/adminController'\\); require\\('C:/Users/sandesh/Desktop/odooxVIT-final/backend/src/routes/services'\\); require\\('C:/Users/sandesh/Desktop/odooxVIT-final/backend/src/routes/admin'\\); console.log\\('✓ all controllers + routes load'\\)\")"
-    ]
-  }
-}
