@@ -86,6 +86,9 @@ export function humanCountdown(min) {
 export function resolveAsset(url) {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  if (url.startsWith('/uploads/')) return url;     // proxied by Vite, served by Express in prod
+  if (url.startsWith('/uploads/')) {
+    const base = import.meta.env.VITE_API_BASE_URL || '';
+    return base + url;
+  }
   return url;
 }
