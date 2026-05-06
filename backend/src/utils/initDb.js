@@ -12,10 +12,13 @@ const bcrypt = require('bcryptjs');
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     multipleStatements: true,
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   const schema = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'schema.sql'), 'utf8');
-  const seed   = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'seed.sql'), 'utf8');
+  const seed = fs.readFileSync(path.join(__dirname, '..', '..', 'db', 'seed.sql'), 'utf8');
 
   console.log('Applying schema...');
   await conn.query(schema);
