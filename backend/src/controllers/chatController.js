@@ -181,7 +181,7 @@ exports.send = async (req, res) => {
   const text = String(req.body.text || '').trim();
   if (!text) throw new HttpError(400, 'text required');
   if (text.length > 500) throw new HttpError(400, 'message too long (max 500 chars)');
-  await pool.query('INSERT INTO chat_messages (user_id, role, text) VALUES (?, "user", ?)',
+  await pool.query("INSERT INTO chat_messages (user_id, role, text) VALUES (?, 'user', ?)",
     [req.user.id, text]);
 
   // 1) Try OpenAI when configured. 2) Fall back to deterministic rule-based.
@@ -192,7 +192,7 @@ exports.send = async (req, res) => {
   }
   if (!answer) answer = await reply(req.user.id, text);
 
-  await pool.query('INSERT INTO chat_messages (user_id, role, text) VALUES (?, "assistant", ?)',
+  await pool.query("INSERT INTO chat_messages (user_id, role, text) VALUES (?, 'assistant', ?)",
     [req.user.id, answer]);
   res.json({ reply: answer, source: OPENAI_KEY && answer ? 'ai' : 'rules' });
 };
