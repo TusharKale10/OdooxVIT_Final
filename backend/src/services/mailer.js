@@ -12,7 +12,7 @@ let transporterPromise = null;
 let transportInfo = '';
 
 function buildSmtpTransport() {
-  return nodemailer.createTransport({
+  const cfg = {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 587,
     secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
@@ -20,7 +20,12 @@ function buildSmtpTransport() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     } : undefined,
-  });
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+  };
+  console.log(`[mailer:debug] building transport host=${cfg.host} port=${cfg.port} secure=${cfg.secure} user=${cfg.auth?.user || '(none)'} passLen=${cfg.auth?.pass?.length || 0}`);
+  return nodemailer.createTransport(cfg);
 }
 
 function consoleTransport() {
@@ -69,8 +74,11 @@ async function getTransporter() {
 
 async function sendMail({ to, subject, html, text }) {
   if (!to) return null;
+  console.log(`[mailer:debug] sendMail called to=${to} subject="${subject}"`);
   try {
+    console.log('[mailer:debug] awaiting getTransporter()...');
     const t = await getTransporter();
+    console.log(`[mailer:debug] transporter ready (${transportInfo}); calling sendMail...`);
     const info = await t.sendMail({
       from: process.env.MAIL_FROM || 'Appointly <noreply@appointly.local>',
       to, subject, html, text,
@@ -79,10 +87,13 @@ async function sendMail({ to, subject, html, text }) {
       const preview = nodemailer.getTestMessageUrl ? nodemailer.getTestMessageUrl(info) : null;
       console.log(`[mailer] sent → ${to} via ${transportInfo} :: ${subject}` +
         (preview ? `  preview=${preview}` : ''));
+    } else {
+      console.log(`[mailer:debug] sendMail returned without messageId; info=${JSON.stringify(info)}`);
     }
     return info;
   } catch (e) {
     console.error('[mailer] send failed:', e.message);
+    console.error('[mailer:debug] error code=', e.code, 'command=', e.command, 'response=', e.response);
     return null;
   }
 }
