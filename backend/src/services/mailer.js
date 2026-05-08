@@ -1,12 +1,56 @@
 // Centralised mail sender.
-// - Uses real SMTP credentials when configured via .env (SMTP_HOST, SMTP_PORT, ...)
-// - Falls back to Ethereal (a free dev SMTP) so emails are deliverable & previewable
+// - Uses Brevo HTTP API when BREVO_API_KEY is set (works on hosts that block SMTP egress, e.g. Render Free).
+// - Otherwise uses SMTP when SMTP_HOST is configured.
+// - Falls back to Ethereal (a free dev SMTP) so emails are deliverable & previewable.
 // - Falls back to console logging only when both above are unreachable.
 //
 // We intentionally never throw on send failures — auth/booking flows must not
 // break if mail delivery is degraded.
 
 const nodemailer = require('nodemailer');
+
+// "Name <email@x>" or "email@x" → { name, email }
+function parseFrom(raw) {
+  const s = String(raw || '').trim();
+  const m = s.match(/^(.*?)\s*<([^>]+)>\s*$/);
+  if (m) return { name: m[1].replace(/^["']|["']$/g, '').trim() || undefined, email: m[2].trim() };
+  return { email: s };
+}
+
+function brevoApiTransport() {
+  const apiKey = process.env.BREVO_API_KEY;
+  return {
+    sendMail: async (opts) => {
+      const sender = parseFrom(opts.from);
+      const body = {
+        sender,
+        to: [{ email: opts.to }],
+        subject: opts.subject,
+        htmlContent: opts.html || undefined,
+        textContent: opts.text || undefined,
+      };
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'accept': 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        const err = new Error(`Brevo API ${res.status}: ${text}`);
+        err.code = `HTTP_${res.status}`;
+        err.response = text;
+        throw err;
+      }
+      let json = {};
+      try { json = JSON.parse(text); } catch { /* ignore */ }
+      return { messageId: json.messageId || `brevo-${Date.now()}` };
+    },
+  };
+}
 
 let transporterPromise = null;
 let transportInfo = '';
@@ -43,6 +87,13 @@ function consoleTransport() {
 
 async function getTransporter() {
   if (transporterPromise) return transporterPromise;
+
+  if (process.env.BREVO_API_KEY) {
+    transportInfo = 'Brevo HTTP API';
+    console.log('[mailer:debug] using Brevo HTTP API');
+    transporterPromise = Promise.resolve(brevoApiTransport());
+    return transporterPromise;
+  }
 
   if (process.env.SMTP_HOST) {
     transportInfo = `SMTP ${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587}`;
