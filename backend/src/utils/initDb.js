@@ -36,6 +36,20 @@ const bcrypt = require('bcryptjs');
   const schema = adapt(rawSchema);
   const seed   = adapt(rawSeed);
 
+  // Managed DBs strip the schema's DROP DATABASE, so we have to clear tables
+  // ourselves to keep db:init idempotent. Disable FK checks while dropping.
+  console.log(`Clearing existing tables in \`${dbName}\`...`);
+  const [tables] = await conn.query(
+    'SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?',
+    [dbName]
+  );
+  if (tables.length) {
+    const dropList = tables.map((r) => `\`${r.t || r.T || r.table_name}\``).join(', ');
+    await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+    await conn.query(`DROP TABLE IF EXISTS ${dropList}`);
+    await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+  }
+
   console.log(`Applying schema to database \`${dbName}\`...`);
   await conn.query(schema);
   console.log('Seeding sample data...');
